@@ -3,8 +3,8 @@ clear;
 close all;
 
 %% Define parameters
-cube_folder = '../data/colorChecker_SG/cubes';  % Folder with HDR files
-reference_cube_path = '../data/colorChecker_SG/cubeCC_DigitalSG_REF.hdr';  % Path to reference cube (same for all)
+cube_folder = '../../data/colorChecker_SG/cubes';  % Folder with HDR files
+reference_cube_path = '../../data/colorChecker_SG/cubeCC_DigitalSG_REF.hdr';  % Path to reference cube (same for all)
 output_folder = '../results/error_maps/third';  % Output folder to save the error maps
 rng(10);
 
@@ -14,8 +14,8 @@ if ~exist(output_folder, 'dir')
 end
 
 % Load spectral data
-ill = importdata('../data/CIE_D65.txt'); % Illuminant
-CMFs = importdata('../data/CIE2degCMFs_1931.txt');  % CIE 1931 CMFs
+ill = importdata('../../data/CIE_D65.txt'); % Illuminant
+CMFs = importdata('../../data/CIE2degCMFs_1931.txt');  % CIE 1931 CMFs
 
 % Load the reference cube (the same for all)
 hcube_ref = hypercube(reference_cube_path);
@@ -125,7 +125,7 @@ title('Test Patches in Chromaticity Space');
 xlim([0 1]); ylim([0 1]); % Keep axes consistent
 
 %% --- Evaluate error function ---
-function evaluate_error(X_test, Y_test, coeffs, Y, corrected_xyz, m, n, file_name, output_folder)
+function evaluate_error(X_test, Y_test, coeffs, reference_xyz, corrected_xyz, m, n, file_name, output_folder)
     % Compute Delta E2000 Error
     lab_ref = xyz2lab(Y_test);
     lab_corrected = xyz2lab(X_test * coeffs);
@@ -133,7 +133,7 @@ function evaluate_error(X_test, Y_test, coeffs, Y, corrected_xyz, m, n, file_nam
     deltaE2000_errors = deltaE2000(lab_corrected, lab_ref);
     
     % Error map visualization
-    lab_full_ref = xyz2lab(Y);
+    lab_full_ref = xyz2lab(reference_xyz);
     lab_full_corrected = xyz2lab(corrected_xyz);
     error_map = reshape(deltaE2000(lab_full_corrected, lab_full_ref), m, n);
     
