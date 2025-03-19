@@ -1,0 +1,147 @@
+Gratulation, Sie haben ein IT 8.7/1 Scanner Kalibrationsbild!
+Noch ein paar Hinweise zur Erinnerung:
+
+- Das Kalibrationsdia sollte nur mit Velvia 100, 100F, Provia 400X,
+  und Astia 100F Filmen eingesetzt werden. Das Target ist auch fuer
+  die seit Juni 2003 produzierten Sensia 100 Filme
+  (Emulsionsnummern beginnend mit 687 und hoeher) geeignet. Aeltere
+  Sensia 100 Filme sollten nicht mit diesem Target verwendet werden.
+
+  Die Benutzung des Kalibrationsdias mit nicht geeigneten Filmsorten
+  fuehrt normalerweise zu sichtbaren Farbfehlern und sollte daher
+  vermieden werden.
+
+- Die zu dem Kalibrationsdia passende IT 8.7/1 Referenzdatei finden Sie auf 
+  dieser Diskette/CD als Datei "N080301.txt". Waehlen Sie diese Datei als 
+  Referenzdatei in Ihrer Scanner-Profilierungssoftware (z.B. 
+  qtScannerProfiler in lcms). Benutzen Sie nur die zu Ihrer auf dem 
+  Diarahmen aufgedruckten Charge passende Referenzdatei. Evtl. zusaetzliche 
+  Informationen und Updates koennen im Internet unter 
+  http://www.targets.coloraid.de nachgeladen werden.
+
+- Behandeln Sie das Kalibrationsbild vorsichtig, um Druckstellen oder
+  Beschmutzungen zu vermeiden. Beruehren Sie nicht die ungeschuetzte
+  Oberflaeche des Kalibrationsbildes.
+
+- Bewahren Sie das Bild an einem trockenen, kalten und dunklen Ort
+  in der Schutzhuelle auf. Bei der Langzeitarchivierung von Dias
+  sollten Sie das Target mit Ihren normalen Dias im Archiv aufbewahren,
+  so dass das Target den gleichen Umweltbedingungen ausgesetzt ist
+  wie Ihr Diaarchiv. Dies erlaubt eine leichtere Korrektur der
+  durch Alterung verursachten Farbfehler bei spaeteren Scans.
+  
+  Mehr Informationen zum Umgang und Lagerung von Filmen finden Sie
+  in den Fujifilm "Product Information Bulletin" des verwendeten
+  Films (Velvia 100F). Fuer die Lagerung von Farbtargets sollten Sie
+  die Angaben des Bulletins eher deutlich konservativer auslegen.
+  
+  Eine ausfuehrlichere und besonders gute Anleitung zur Lagerung
+  von photographischen Material finden Sie in der Kodak Publikation
+  E-30, "Storage and Care of Kodak Photographic Materials - 
+  Before and After Processing". Das Dokument finden Sie auf der
+  Website von Kodak http://www.kodak.com.
+
+- Da  sich die Farben des Dias mit der Zeit aendern koennen, sollten 
+  Sie  das  Kalibrationbsild von Zeit zu Zeit erneuern. Fuer kritische 
+  Aufgaben wird ein Zeitraum von ca. 2 Jahren empfohlen. Ansonsten 
+  duerfte aber auch ein Zeitraum von 2-3 Jahren ausreichend sein. 
+  Empfehlungen und Informationen werden falls noetig im Internet unter 
+  http://www.targets.coloraid.de angezeigt.
+
+- Das  Kalibrationsbild  kann  praktisch  mit jeder ordentlichen
+  IT 8.7/1  kompatiblen  Software auf PC, Mac, Sun, Amiga o.ae. verwendet 
+  werden. Im Internet finden Sie unter http://www.coloraid.de einige
+  kostenlose Programme aufgelistet.
+
+- Die BasICColor Profilierungssoftware braucht evtl. neben der gelieferten 
+  Referenzdatei zusaetzliche Informationen zum Laden der Farbdaten. Sollte 
+  Ihre BasICColor Version die Referenzdatei nicht laden, kopieren Sie die 
+  Referenzdatei vorher in das Verzeichnis fuer Agfa Referenzdaten der 
+  BasICCColor Installation.
+
+- Der Farbumfang (Farbgamut) von Diafilmen ist meistens erheblich 
+  groesser als der von Ein- und Ausgabegeraeten. Neben den Hardware-
+  Beschraenkungen koennen auch evtl. Probleme mit der Profiling-Software 
+  auftauchen. Sollten Sie erhebliche Farbfehler beim Scannen von stark 
+  gesaettigten Farben erhalten, suchen Sie bitte nicht nur bei dem Scanner-
+  Farbprofil nach Fehlern. Auch das Ausgabeprofil koennte mit dem 
+  Farbumfang der Filme nicht gut zurechtkommen. Sollte sich das 
+  Scannerprofil als fehlerhaft herausstellen, empfehle ich dringend den 
+  Einsatz von guter Scanner Profilingsoftware, die speziell fuer den Umgang 
+  von Diafilmen geeignet ist. Nicht jede Scanner-Software, die fuer 
+  Auflichttargets entwickelt wurde, funktioniert auch automatisch gut mit 
+  Durchlichtfilmen. 
+
+- In dem "Extras" Verzeichnis finden Sie weitere Dateien fuer Ihr 
+  Kalibrationsdia:
+
+  N080301S.txt :  Dies ist eine kleinere Version der normalen Referenzdatei.
+                  Die Datei enthaelt keine statistischen Daten ueber die 
+                  Herstellungsschwankungen der Dias. Benutzen Sie diese 
+                  kleinere Datei, wenn Ihre Software beim Lesen der 
+                  normalen Referenzdatei abstuerzt oder Fehler meldet. Z.B. 
+                  gibt es einige Versionen der Heidelberg CPS ScanOpen 
+                  Software, die beim Lesen der normalen Referenzdatei 
+                  abstuerzen. Es gibt keinerlei Qualitaetsverluste, wenn 
+                  Sie die kleinere Datei benutzen, da nur statische 
+                  Herstellungsdaten entfernt wurden.
+                  
+  N080301.eps :   Hierbei handelt es sich um die Spektralwerte der Targets 
+                  als ColorShop V2 EPS Datei. Das Dateiformat ist auf einen 
+                  Messbereich von 390-690nm beschraenkt. Tests zeigen, dass 
+                  diese Einschraenkung aber in der Praxis nur sehr geringe 
+                  Abweichungen verursacht (ca. CIE Lab dE 0.2). Bitte lesen
+                  Sie auch unten die Kommentare zu den Spektraldaten.
+
+  N080301.xls :   Eine durch Tabulatoren formatierte Datei mit den 
+                  Spektralwerten der Targets die ordentlich formatiert in 
+                  Excel geladen wird. Bitte lesen Sie auch unten die 
+                  Kommentare zu den Spektraldaten.
+
+  N080301.cgt :   Die Spektraldaten der Targets im ANSI CGATS.5-1993 
+                  Format. Bitte beachten Sie, dass die IT 8.7 
+                  Referenzdateien im wesentlichen auch CGATS.5 Dateien 
+                  sind. Gute Scanner Profiler (Amiga ICS, lcms) koennen 
+                  diese .cgt Datei laden. dennoch sollten Sie die normale 
+                  IT 8.7 Referenzdatei verwenden, es sei denn, es wird 
+                  ausdruecklich anders erwaehnt, da es Unterschiede in den 
+                  berechneten Normfarbwerten gibt (mehr dazu unten).
+
+  N080301.cxf :   Die Spektraldaten des Kalibrationsdias finden Sie in 
+                  diesem XML basierten CxF Format. Das CxF Format ist 
+                  besonders bei neueren Gretag-Macbeth Soft- und 
+                  Hardwareprodukten gebraeuchlich. Eye-One Share 
+                  (http://www.i1color.com/freeware), das bei ProfileMaker 
+                  mitgelieferte MeasureTool und ColorLab (beides auf 
+                  http://www.gretagmacbeth.com) sind alle mindestens als 
+                  eingeschraenkte Demo-Versionen online verfuegbar und koennen 
+                  diese CxF Datei laden/anzeigen. Jedoch aehnlich wie bei 
+                  ColorShop ist meistens die Verarbeitung der Messdaten nur 
+                  auf einem eingeschraenkten Messbereich (380-730nm) 
+                  moeglich, auch wenn die CxF Datei die kompletten 380-
+                  780nm Daten enthaelt.
+
+- Die im "Extras" Verzeichnis mitgelieferten Spektralwerte sind 
+  hauptsaechlich fuer sehr erfahrene Nutzer und Entwickler mit 
+  entsprechender Software gedacht. Normale Nutzer die "nur" Ihre Scanner 
+  profilieren wollen, sollten den Mauszeiger von diesen Daten fernhalten 
+  und die normalen Referenzdateien benutzen.
+
+  Wozu sind die Spektraldaten fuer "normale" Nutzer gut? Z.B. kann man die 
+  Farben des Targets fuer verschiedene Beobachter oder Lichtquellen berechnen. 
+  Wer gewoehnt ist mit Dichte zu Rechnen, kann dies mit Hilfe der 
+  Spektralwerte tun. Z.B. mit X-Rite's ColorShop kann jeder leicht die 
+  Farben des Targets fuer verschiedenste Aufgaben umrechnen und anzeigen 
+  lassen.
+
+- Die Messwerte entsprechen dem ISO 13655 Standard. Die Messung erfolgte 
+  von 380-780nm in 3nm Intervallen, wobei die Daten entsprechend ISO 
+  13655:1996(E) Annex A auf 10nm interpoliert wurden. Die in den Dateien 
+  angegeben Spektralwerte sind die Mittelwerte der gemessenen Targets. Die 
+  aus den gemittelten Spektralwerten errechneten Normfarbwerte (XYZ, Lab) 
+  koennen sich von den in der IT 8.7 Referenzdatei angegebenen Werten,
+  die einen Mittelwert der Normfarbwerte darstellen, unterscheiden.
+  Die Status A Dichtewerte in der Referenzdatei entsprechen
+  ANSI CGATS.5-1993.
+
+Wolf Faust - wfaust@coloraid.de
