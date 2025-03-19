@@ -4,8 +4,8 @@ roof = double(intmax('uint16'));
 
 histoFACT = 200; % Factor used to find the edges of the histograms
 
-ill = importdata('../data/CIE_D65.txt');
-CMFs = importdata('../data/CIE2degCMFs.txt');
+ill = importdata('../../data/CIE_D65.txt');
+CMFs = importdata('../../data/CIE2degCMFs_1931.txt');
 
 %% Select input folder containing HDR cubes
 f = msgbox('Select the folder containing HDR cubes');
@@ -51,7 +51,7 @@ for i = 1:length(hdrFiles)
     if isempty(underscoreIdx)
         titleText = hdrFileName(1:end-4); % Remove ".hdr" if no underscore
     else
-        titleText = hdrFileName(underscoreIdx(1)+1:end-4); % Remove ".hdr"
+        titleText = hdrFileName(underscoreIdx(2)+1:end-4); % Remove ".hdr"
     end
     titleText = strrep(titleText, '_', ' '); % Replace underscores with spaces in title
 

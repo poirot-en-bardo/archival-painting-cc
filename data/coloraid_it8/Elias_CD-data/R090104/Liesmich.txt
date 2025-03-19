@@ -1,0 +1,107 @@
+
+  Gratulation, Sie haben ein IT 8.7/2 Scanner Kalibrationsbild!
+  Noch ein paar Hinweise zur Erinnerung:
+
+- Im unteren rechten Bereich des Kalibrationsbild finden Sie die 
+  Charge Ihres Kalibrationsbildes (z.B. R090104). Die zu dem Bild passende 
+  IT 8.7/2 Referenzdatei finden Sie auf dieser Diskette/CD als Datei 
+  "R090104.txt". Waehlen Sie diese Datei als Referenzdatei in Ihrer 
+  Scanner-Kalibrationssoftware. Benutzen Sie nur die zu Ihrer Charge
+  passende Referenzdatei. Sie koennen die aktuellen Referenzdateien
+  auch im Internet unter http://www.targets.coloraid.de finden.
+
+- Behandeln Sie das Kalibrationsbild vorsichtig, um Druckstellen oder
+  Beschmutzungen zu vermeiden. Beruehren Sie nicht die ungeschuetzte
+  Oberflaeche des Kalibrationsbildes.
+
+- Bewahren Sie das Bild an einem dunklen trockenen Ort bei
+  niedriger Raumtemperatur (21 C) in der Schutzhuelle auf.
+  Die relative Luftfeuchte sollte 50% nicht uebersteigen.
+
+- Vermeiden Sie ploetzliche Temperaturschwankungen oder
+  hohe Luftfeuchtigkeit, da dies zu Kondensat in der Schutzhuelle
+  fuehren kann.
+
+- Sollte trotz aller Hinweise eine Reinigung des Bildes noetig sein,
+  so benutzen Sie bitte ein fusselfreies Tuch (z.B. ein Brillentuch).
+  Benutzen Sie keinesfalls Alkohol oder andere Chemikalien zum Reinigen.
+
+- Entfernen Sie die Schutzhuelle vor dem Scannen. 
+
+- Da  sich die Farben des Bildes mit der Zeit aendern koennen, sollten 
+  Sie  das  Kalibrationbsild von Zeit zu Zeit erneuern. Fuer kritische 
+  Aufgaben wird ein Zeitraum von ca. 2 Jahren empfohlen. Ansonsten 
+  duerfte aber auch ein Zeitraum von 2-3 Jahren ausreichend sein. 
+  Empfehlungen und Informationen werden falls noetig im Internet unter 
+  http://www.targets.coloraid.de angezeigt.
+
+- Das  Kalibrationsbild  kann  praktisch  mit jeder ordentlichen
+  IT 8.7/2  kompatiblen  Software auf PC, Mac, Amiga o.ae. verwendet 
+  werden.   Getestet  wurden  bislang  ScanOpen (siehe "Extras" 
+  Verzeichnis), ColorTune,  CorelDraw, SilverFast, lcms und andere mehr.
+  Die  Referenzdatei ist auf allen System identisch und kann daher
+  einfach zu einem gewuenschten System transferiert werden.
+  Sollten Sie noch keinen Profiling Software besitzen, so finden Sie einige
+  Links zu Profilern unter http://www.coloraid.de .
+
+- Die BasICColor Profilierungssoftware braucht evtl. neben der gelieferten 
+  Referenzdatei zusätzliche Informationen zum Laden der Farbdaten. Sollte 
+  Ihre BasICColor Version die Referenzdatei nicht laden, kopieren Sie die 
+  Referenzdatei vorher in das Verzeichnis für Agfa Referenzdaten der 
+  BasICCColor Installation.
+
+- In dem "Extras" Verzeichnis finden Sie weitere Dateien fuer Ihr 
+  Kalibrationsbild:
+
+  R090104W.txt :  Entspricht der normalen Referenzdatei, jedoch wurde
+                  das Bild mit weissen anstatt schwarzen Untergrund
+                  gemessen. Normal werden die Farben entsprechend
+                  dem ANSI IT 8.7/2 Standard auf schwarzem Hintergrund
+                  gemessen. Besonders im Consumer-Bereich gibt es jedoch
+                  viele Scanner, die Bilder vor einem hellen Hintergrund
+                  messen. In diesen Faellen empfiehlt sich die Verwendung
+                  dieser realistischeren Referenzdatei.
+  
+  R090104S.txt :  Dies ist eine kleinere Version der normalen Referenzdatei.
+                  Die Datei enthaelt keine statistischen Daten zur
+                  Herstellung der Targets. Benutzen Sie diese kleinere
+                  Datei, wenn Ihre Software beim Lesen der normalen
+                  Referenzdatei abstuerzt, Fehler meldet oder die normale
+                  Datei nicht akzeptiert wird.
+                  Derzeit sind nur zwei Profiler bekannt, die nicht mit
+                  den standard Referenzdaten funktionieren und diese
+                  kleinere Datei brauchen. Dies sind einige Versionem von
+                  Heidelberg CPS ScanOpen und Agfas ColorTune Software.
+
+  Fault.txt    :  Enthaelt einige zusaetzliche technische Informationen zur 
+                  Herstellung und zu den Messwerten der Targets.
+
+  R090104.hist :  Hierbei handelt es sich um die Spektralwerte der Targets 
+                  als ColorShop X History Datei. Mit Hilfe der 
+                  Spektraldaten kann ColorShop X eine Reihe von 
+                  Farboperationen ausfuehren. Eine zeitlich limitierte aber 
+                  voll funktionsfaehige Demo-Version des ColorShop X 
+                  Programms fuer MacOS und Windows finden Sie auf der 
+                  Internet-Seite des Herstellers X-Rite:
+                  http://www.x-rite.de . Das Dateiformat ist auf einen
+                  Messbereich von 400-700nm beschraenkt. Bitte lesen
+                  Sie auch unten die Kommentare zu den Spektraldaten.
+
+- Die im "Extras" Verzeichnis mitgelieferten Spektralwerte sind 
+  hauptsaechlich fuer sehr erfahrene Nutzer und Entwickler mit 
+  entsprechender Software gedacht. Normale Nutzer die "nur" Ihre Scanner 
+  profilieren wollen, sollten den Mauszeiger von diesen Daten fernhalten 
+  und die normalen Referenzdateien benutzen.
+  Wozu sind die Spektraldaten dann gut? Z.B. kann man die Farben
+  des Targets fuer verschiedene Beobachter oder Lichtarten berechnen. 
+
+- Die Messwerte entsprechen dem ISO 13655 Standard. Die Messung erfolgte 
+  von 380-780nm in 3nm Intervallen, wobei die Daten entsprechend ISO 
+  13655:1996(E) Annex A auf 10nm interpoliert wurden. Die in den Dateien 
+  angegeben Spektralwerte sind die Mittelwerte der gemessenen Targets. Die 
+  aus den gemittelten Spektralwerten errechneten Normfarbwerte (XYZ, Lab) 
+  koennen sich von den in der IT 8.7 Referenzdatei angegebenen 
+  Werten, die einen Mittelwert der Normfarbwerte darstellen, unterscheiden.
+  Die Status T Dichtewerte in der Referenzdatei entsprechen ANSI CGATS.5-1993.
+
+Wolf Faust - wfaust@coloraid.de

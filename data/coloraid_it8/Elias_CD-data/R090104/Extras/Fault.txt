@@ -1,0 +1,165 @@
+The mean reproduction fault of the target batch R070919 was measured 
+with CIE Lab dE 0.23. You can find the reproduction faults for each
+individual patch listed in the standard reference file.
+
+--------------------------------------------------------------
+
+Below find the CIE Lab dE errors when comparing the values of the 
+target reference file with the IT 8.7/2 standard values. 
+
+Note: the errors listed below DO NOT describe the error of the target 
+when using the reference file (see the dE 0.23 above). It only shows 
+how impressive the color values of the target match the IT 8.7/2 standard 
+values in case your profiling software is not using the reference file 
+shipped with your target. Any good calibration software uses the 
+reference file of the target to get much lower errors.
+
+          Patch: A1 Err:  0.48
+          Patch: A2 Err:  0.86
+          Patch: A3 Err:  0.72
+          Patch: A5 Err:  1.02
+          Patch: A6 Err:  1.07
+          Patch: A7 Err:  0.75
+          Patch: A9 Err:  0.71
+          Patch: A10 Err:  0.42
+          Patch: A11 Err:  0.64
+          Patch: A16 Err:  0.55
+          Patch: B1 Err:  0.64
+          Patch: B2 Err:  0.56
+          Patch: B3 Err:  0.79
+          Patch: B5 Err:  0.76
+          Patch: B6 Err:  0.90
+          Patch: B7 Err:  0.89
+          Patch: B9 Err:  0.45
+          Patch: B10 Err:  0.75
+          Patch: B11 Err:  0.58
+          Patch: B16 Err:  0.20
+          Patch: C1 Err:  0.63
+          Patch: C2 Err:  0.55
+          Patch: C3 Err:  0.69
+          Patch: C5 Err:  0.87
+          Patch: C6 Err:  0.89
+          Patch: C7 Err:  0.42
+          Patch: C9 Err:  0.37
+          Patch: C10 Err:  0.31
+          Patch: C11 Err:  0.24
+          Patch: C16 Err:  0.44
+          Patch: D1 Err:  0.58
+          Patch: D2 Err:  0.43
+          Patch: D3 Err:  0.47
+          Patch: D5 Err:  0.80
+          Patch: D6 Err:  0.72
+          Patch: D7 Err:  0.28
+          Patch: D9 Err:  0.67
+          Patch: D10 Err:  0.16
+          Patch: D11 Err:  0.42
+          Patch: D16 Err:  0.79
+          Patch: E1 Err:  0.45
+          Patch: E2 Err:  0.46
+          Patch: E3 Err:  0.33
+          Patch: E5 Err:  0.54
+          Patch: E6 Err:  0.61
+          Patch: E7 Err:  0.25
+          Patch: E9 Err:  0.41
+          Patch: E10 Err:  0.79
+          Patch: E11 Err:  0.53
+          Patch: E16 Err:  0.59
+          Patch: F1 Err:  0.29
+          Patch: F2 Err:  0.24
+          Patch: F3 Err:  1.05
+          Patch: F5 Err:  0.20
+          Patch: F6 Err:  0.53
+          Patch: F7 Err:  0.74
+          Patch: F9 Err:  0.66
+          Patch: F10 Err:  0.85
+          Patch: F11 Err:  0.82
+          Patch: F16 Err:  0.57
+          Patch: G1 Err:  0.32
+          Patch: G2 Err:  0.36
+          Patch: G3 Err:  0.81
+          Patch: G5 Err:  0.30
+          Patch: G6 Err:  0.41
+          Patch: G7 Err:  0.71
+          Patch: G9 Err:  0.81
+          Patch: G10 Err:  0.49
+          Patch: G11 Err:  0.56
+          Patch: G16 Err:  0.43
+          Patch: H1 Err:  0.67
+          Patch: H2 Err:  0.43
+          Patch: H3 Err:  0.50
+          Patch: H5 Err:  0.17
+          Patch: H6 Err:  0.37
+          Patch: H7 Err:  0.65
+          Patch: H9 Err:  0.59
+          Patch: H10 Err:  0.30
+          Patch: H11 Err:  0.40
+          Patch: H16 Err:  0.47
+          Patch: I1 Err:  0.21
+          Patch: I2 Err:  0.17
+          Patch: I3 Err:  0.62
+          Patch: I5 Err:  0.20
+          Patch: I6 Err:  0.62
+          Patch: I7 Err:  0.34
+          Patch: I9 Err:  0.35
+          Patch: I10 Err:  0.67
+          Patch: I11 Err:  0.58
+          Patch: I16 Err:  0.45
+          Patch: J1 Err:  0.62
+          Patch: J2 Err:  0.72
+          Patch: J3 Err:  0.70
+          Patch: J5 Err:  0.57
+          Patch: J6 Err:  0.42
+          Patch: J7 Err:  0.37
+          Patch: J9 Err:  0.55
+          Patch: J10 Err:  0.44
+          Patch: J11 Err:  0.75
+          Patch: J16 Err:  0.36
+          Patch: K1 Err:  0.52
+          Patch: K2 Err:  0.69
+          Patch: K3 Err:  0.59
+          Patch: K5 Err:  0.67
+          Patch: K6 Err:  1.00
+          Patch: K7 Err:  0.89
+          Patch: K9 Err:  0.58
+          Patch: K10 Err:  0.58
+          Patch: K11 Err:  0.52
+          Patch: K16 Err:  0.76
+          Patch: L1 Err:  0.63
+          Patch: L2 Err:  0.79
+          Patch: L3 Err:  0.67
+          Patch: L5 Err:  0.84
+          Patch: L6 Err:  0.84
+          Patch: L7 Err:  1.06
+          Patch: L9 Err:  0.33
+          Patch: L10 Err:  0.41
+          Patch: L11 Err:  0.51
+          Patch: L16 Err:  0.19
+          Patch: GS1 Err:  0.36
+          Patch: GS2 Err:  0.24
+          Patch: GS3 Err:  0.67
+          Patch: GS4 Err:  0.53
+          Patch: GS5 Err:  0.96
+          Patch: GS6 Err:  0.79
+          Patch: GS7 Err:  0.63
+          Patch: GS8 Err:  0.52
+          Patch: GS9 Err:  0.50
+          Patch: GS10 Err:  0.47
+          Patch: GS11 Err:  0.60
+          Patch: GS12 Err:  0.56
+          Patch: GS13 Err:  0.43
+          Patch: GS14 Err:  0.33
+          Patch: GS15 Err:  0.38
+          Patch: GS16 Err:  0.32
+          Patch: GS17 Err:  0.53
+          Patch: GS18 Err:  0.52
+          Patch: GS19 Err:  0.12
+          Patch: GS20 Err:  0.42
+          Patch: GS21 Err:  0.66
+          Patch: GS22 Err:  0.35
+
+Total:
+
+       Mean  0.56
+        Max  1.07 (Patch A6)
+    Std Dev  0.60
+    
