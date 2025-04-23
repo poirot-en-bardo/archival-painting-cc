@@ -48,18 +48,11 @@ xyz_ref = (lincube_ref * sp_tristREF) ./ sum(sp_tristREF(:,2),1);
 
 rgb_input =  xyz2rgb(xyz_input, 'ColorSpace','prophoto-rgb');
 
-%% Assume rgb_input is an N×3 matrix (with N = m*n) obtained from your data
-% and that m and n are the spatial dimensions of the color checker.
 
-%% Assume xyz_input (N×? matrix) is computed from your data, and m and n are the spatial dimensions.
+%% Assume xyz_input (N×? matrix) is computed from the data, and m and n are the spatial dimensions.
 % Convert XYZ to RGB (using ProPhoto-RGB in this example)
 rgb_image = reshape(xyz2rgb(xyz_input, 'ColorSpace','prophoto-rgb'), [m, n, 3]);
 
-%% Define the white patch positions (based on your known pattern)
-% White patches are at specific rows and columns:
-%% Assume rgb_image is your m x n x 3 image obtained from xyz2rgb, and m and n are known.
-% For example, from your code:
-% rgb_image = reshape(xyz2rgb(xyz_input, 'ColorSpace','prophoto-rgb'), [m, n, 3]);
 
 %% Identify white border patches (positions known from your design)
 white_patch_rows = [1, 4, 7, 10];

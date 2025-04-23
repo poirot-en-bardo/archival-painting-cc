@@ -1,0 +1,71 @@
+
+path1_hdr = "/Volumes/School/Thesis/Data/HySpex/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw.hdr";
+path1_hyspex = "/Volumes/School/Thesis/Data/HySpex/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw.hyspex";
+path2_hdr = "/Volumes/School/Thesis/Data/HySpex/cactusHalogen_002_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T112522_raw.hdr";
+path2_hyspex = "/Volumes/School/Thesis/Data/HySpex/cactusHalogen_002_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T112522_raw.hyspex";
+
+
+
+
+% 1) Define file paths
+hdr1     = "/Volumes/.../scan1_raw.hdr";
+hyspex1  = "/Volumes/.../scan1_raw.hyspex";
+hdr2     = "/Volumes/.../scan2_raw.hdr";
+hyspex2  = "/Volumes/.../scan2_raw.hyspex";
+
+% 2) Load cubes as raw radiance arrays
+[data1, wl] = loadHySpexCube(hdr1, hyspex1);
+[data2, ~ ] = loadHySpexCube(hdr2, hyspex2);
+
+% 3) Choose a representative (mid-spectrum) band for interactive registration
+midBand   = round(numel(wl)/2);
+movingImg = data1(:,:,midBand);
+fixedImg  = data2(:,:,midBand);
+
+% 4) Launch Registration Estimator GUI
+registrationEstimator(movingImg, fixedImg);                % opens app 
+uiwait(warndlg(['Pick matching points, export as ''movingReg'', then click OK.'], 'Stitch Setup'));
+
+% 5) Retrieve exported transformation and spatial reference
+tformObj = movingReg.Transformation;                       % geometric transform
+Rfixed   = movingReg.SpatialRefObj;                        % output spatial reference
+
+% 6) Warp every band of data1 into data2’s frame
+[h, w, B] = size(data2);
+regData = zeros(h, w, B, 'like', data2);
+for k = 1:B
+    regData(:,:,k) = imwarp( ...
+        data1(:,:,k), tformObj, ...
+        'OutputView', Rfixed);                              % consistent across bands :contentReference[oaicite:5]{index=5}
+end
+
+% 7) Stitch by filling zeros and averaging overlaps
+nodataMask = (regData == 0);
+stitched = regData;
+stitched(nodataMask) = data2(nodataMask);                  % fill gaps
+overlap = ~nodataMask & (data2 ~= 0);
+stitched(overlap) = 0.5 * (double(regData(overlap)) + double(data2(overlap)));
+
+% 8) Build and return a hypercube with radiance
+stitchedCube = hypercube(stitched, wl);                     % create hypercube :contentReference[oaicite:6]{index=6}
+
+% 9) Visualize an RGB composite
+rgbVis = colorize(stitchedCube, 'Method','RGB','ContrastStretching',true);
+figure; imshow(rgbVis); title('Stitched Radiance Cube (RGB)');
+
+function [hcData, wavelengths] = loadHySpexCube(hdrFile, hyspexFile)
+    % Parse ENVI header metadata
+    info = enviinfo(hdrFile);  
+    % info.Height, info.Width, info.Bands, info.DataType, info.HeaderOffset,
+    % info.Interleave, info.ByteOrder, info.Wavelength
+    
+    % Read raw radiance data from the .hyspex file
+    hcData = multibandread( ...
+        hyspexFile, ...
+        [info.Height, info.Width, info.Bands], ...
+        info.DataType, ...
+        info.HeaderOffset, ...
+        info.Interleave, ...
+        info.ByteOrder);                  % loads raw bytes correctly :contentReference[oaicite:2]{index=2}
+    wavelengths = info.Wavelength;        % wavelength vector
+end
