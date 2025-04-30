@@ -1,0 +1,207 @@
+clear; close all;
+%% File paths
+hdr1 = "/home/oem/eliza/data/radiance/cactusLED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T120127_raw_rad_float32.hdr";
+hdr2 = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
+% hdr1 = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
+% hdr2 = "/home/oem/eliza/data/radiance/cactusHalogen_002_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T112522_raw_rad_float32.hdr";
+hdr1 = "/home/oem/eliza/data/radiance/yodaLED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T131442_raw_rad_float32.hdr";
+hdr2 = "/home/oem/eliza/data/radiance/yodaLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T133107_raw_rad_float32.hdr";
+
+%% ——— 1) Load cubes via hypercube (all on CPU) —————
+hc1 = hypercube(hdr1);
+hc2 = hypercube(hdr2);
+wl  = hc1.Wavelength;               % assume same for both
+
+%% ——— 2) Band mask 380–780 nm (CPU) ———————————
+mask      = wl >= 380 & wl <= 780;
+bands     = find(mask);
+wl        = wl(mask);
+nBands    = numel(bands);
+
+%% ——— 3) Perform Registration Estimation on a Single Band ———
+% Select the band for registration (e.g., midband)
+refBand = 110; 
+
+% Extract the band for registration
+movRefBand = gather(hc1.DataCube(:,:,refBand)); 
+fixRefBand = gather(hc2.DataCube(:,:,refBand));
+
+% Convert to double precision for SURF feature detection
+movRefBand = double(movRefBand); 
+fixRefBand = double(fixRefBand);
+
+% Clip values above a certain threshold 
+threshold = 1;  % Set an appropriate threshold based on your data
+fixRefBand(fixRefBand > threshold) = threshold;
+movRefBand(movRefBand > threshold) = threshold;
+%
+% Normalize the band used for registration
+fixRefNormalized = (fixRefBand - min(fixRefBand(:))) / (max(fixRefBand(:)) - min(fixRefBand(:)));
+movRefNormalized = (movRefBand - min(movRefBand(:))) / (max(movRefBand(:)) - min(movRefBand(:)));
+
+% Apply contrast stretching to enhance the registration band
+fixRefContrast = imadjust(fixRefNormalized);
+movRefContrast = imadjust(movRefNormalized);
+
+%% ——— Compute Registration Transformation using GUI———
+% registrationEstimator(movRefContrast, fixRefContrast);
+% uiwait(warndlg('Pick matching points, export transform as movingReg, then OK.','Setup'));
+% 
+% %
+% tformObj  = movingReg.Transformation;
+% Rfixed    = movingReg.SpatialRefObj;
+
+
+
+%% ——— 3) Compute SIFT-based registration automatically ———
+
+
+% 3b) Detect SIFT keypoints
+ptsFixed  = detectSIFTFeatures(fixRefContrast);
+ptsMoving = detectSIFTFeatures(movRefContrast);
+
+% 3c) Extract descriptors
+[featFixed,  validFixed]  = extractFeatures(fixRefContrast,  ptsFixed);
+[featMoving, validMoving] = extractFeatures(movRefContrast, ptsMoving);
+
+% 3d) Match features with ratio test
+idxPairs = matchFeatures(featFixed, featMoving, ...
+                         'MaxRatio',0.7, ...
+                         'Unique',true);
+
+matchedFixed  = validFixed(idxPairs(:,1));
+matchedMoving = validMoving(idxPairs(:,2));
+
+% 3e) Estimate geometric transform with RANSAC
+[tformObj, inlierIdx] = estimateGeometricTransform2D( ...
+    matchedMoving, matchedFixed, ...   % map moving → fixed
+    'affine', ...
+    'MaxDistance',1.5, ...
+    'Confidence',99.9, ...
+    'MaxNumTrials',2000);
+
+% 3f) Define the fixed‐image spatial reference
+Rfixed = imref2d(size(fixRefBand));    % [rows,cols] of your fixed band
+
+%  visualize inliers
+figure; showMatchedFeatures(fixRefContrast, movRefContrast, ...
+    matchedFixed(inlierIdx), matchedMoving(inlierIdx), 'montage');
+
+
+% Calculate the output view for the warped images
+[xW, yW] = outputLimits(tformObj, [1 size(hc1,2)], [1 size(hc1,1)]);
+xF        = Rfixed.XWorldLimits;
+yF        = Rfixed.YWorldLimits;
+xMin      = min(xF(1), xW(1));  xMax = max(xF(2), xW(2));
+yMin      = min(yF(1), yW(1));  yMax = max(yF(2), yW(2));
+outW      = round(xMax - xMin);
+outH      = round(yMax - yMin);
+outputView = imref2d([outH, outW], [xMin xMax], [yMin yMax]);
+
+%% ——— 5) Perform Stitching on Full Cube ———
+% Initialize arrays for the final stitched output
+stitchedCPU = zeros(outH, outW, nBands, 'single');
+
+% Loop through each band to process and warp
+for bandIdx = 1:nBands
+    % Extract the band data for this iteration
+    movRefBand = gather(hc1.DataCube(:,:,bandIdx)); 
+    fixRefBand = gather(hc2.DataCube(:,:,bandIdx));
+
+    % Convert to double precision
+    movRefBand = double(movRefBand); 
+    fixRefBand = double(fixRefBand);
+
+    % Clip values above a certain threshold
+    fixRefBand(fixRefBand > threshold) = threshold;
+    movRefBand(movRefBand > threshold) = threshold;
+
+    % Warp the images for this band
+    g1 = gpuArray(single(movRefBand));
+    g2 = gpuArray(single(fixRefBand));
+
+    w1 = imwarp(g1, tformObj,         'OutputView', outputView);
+    w2 = imwarp(g2, affine2d(eye(3)), 'OutputView', outputView);
+
+    % Use moving reference values in the overlap area (no blending)
+    nodata = (w2 == 0);  % Areas with no data in the fixed reference image
+    out = w2;  % Start with the fixed reference image
+    
+    % Replace areas where there's no data in the fixed reference with the moving reference
+    out(nodata) = w1(nodata);
+
+    % Store the result in the stitched output
+    stitchedCPU(:,:,bandIdx) = gather(out);
+    wait(gpuDevice);  % Free memory before next iteration
+end
+
+%% ——— 6) Apply Normalization and `imadjust` on the Full Stitched Cube ———
+% Now normalize and apply `imadjust` to the full stitched cube
+% stitchedCube = double(stitchedCPU);  % Convert to double for processing
+% 
+% % Normalize the entire stitched cube (to the [0, 1] range)
+% stitchedCubeNormalized = (stitchedCube - min(stitchedCube(:))) / (max(stitchedCube(:)) - min(stitchedCube(:)));
+% 
+% % Apply contrast stretching (imadjust) to the full cube -- have to change
+% per band
+% stitchedCubeContrast = imadjust(stitchedCubeNormalized);
+
+
+%% Visualisation
+stitched_thresholded = stitchedCPU;
+%%
+% Clip values above a certain threshold 
+threshold = 0.2;  % Set an appropriate threshold based on your data
+stitched_thresholded(stitched_thresholded > threshold) = threshold;
+
+stitchedCubeHyper = hypercube(stitched_thresholded, wl);  % Convert to a hypercube for visualization
+rgbVis = colorize(stitchedCubeHyper, 'Method', 'RGB', 'ContrastStretching', true);
+%%
+% Visualize the final result
+figure; 
+imshow(rgbVis);
+title('Stream-stitched Hyperspectral Cube');
+
+%% saving the stitched radiance cube
+
+% destFolder = '../../../../data/processed';  
+% if ~exist(destFolder,'dir')
+%     mkdir(destFolder);
+% end
+% 
+% % build full filenames
+% imgPath = fullfile(destFolder, 'cactus_halogen_radiance_full.img');
+% hdrPath = fullfile(destFolder, 'cactus_halogen_radiance_full.hdr');
+% 
+% [rows, cols, bands] = size(stitchedCPU);
+% 
+% multibandwrite( ...
+%     stitchedCPU, ...       % data array
+%     imgPath, ...           % full path
+%     'bsq', ...             % band-sequential
+%     'Precision','single',...% 32-bit float
+%     'Offset',0 ...         % no header offset
+% );
+% 
+% % write the .hdr as before
+% hdrFID = fopen(hdrPath,'w');
+% fprintf(hdrFID,'ENVI\n');
+% fprintf(hdrFID,'samples = %d\n', cols);
+% fprintf(hdrFID,'lines   = %d\n', rows);
+% fprintf(hdrFID,'bands   = %d\n', bands);
+% fprintf(hdrFID,'header offset = 0\n');
+% fprintf(hdrFID,'file type = ENVI Standard\n');
+% fprintf(hdrFID,'data type = 4\n');       % single
+% fprintf(hdrFID,'interleave = bsq\n');
+% fprintf(hdrFID,'byte order = 0\n');      % 0→little-endian
+% 
+% fprintf(hdrFID,'wavelength units = nm\n');
+% fprintf(hdrFID,'wavelength = {');
+% for k = 1:bands
+%     fprintf(hdrFID,'%g', wl(k));
+%     if k<bands
+%         fprintf(hdrFID,',');
+%     end
+% end
+% fprintf(hdrFID,'}\n');
+% fclose(hdrFID);
