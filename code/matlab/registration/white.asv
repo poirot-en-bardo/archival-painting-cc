@@ -49,7 +49,8 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 
 %% Load cardboard scan
 
-board_hdr = "/home/oem/eliza/data/radiance/whitetarget_LED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-14T181533_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_001_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T162625_raw_rad_float32.hdr";
+board_hdr =
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -212,7 +213,8 @@ ref_painting1(ref_painting1 > 1) = 1;
 %%
 figure;
 imshow(ref_painting1(:,:,band_no),[]);
-title('Painting Reflectance Clipped - band 80');
+title(sprintf('Painting Reflectance Clipped - band %d', band_no));
+
 
 %% Masking
 
@@ -222,50 +224,50 @@ band_vis(band_vis>1) = 0;
 
 figure;
 imshow(band_vis, []);
-title('Painting Reflectance (values >1 masked out) - band 80');
+title(sprintf('Painting Reflectance (values >1 masked out) - band %d', band_no));
 
 
 %% Saving the reflectance cube
 
-destFolder = '../../../../data/processed/reflectance';  
-if ~exist(destFolder,'dir')
-    mkdir(destFolder);
-end
-
-% build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.hdr');
-
-
-% Write the multi‐band binary (.img) as single‐precision BSQ 
-multibandwrite(...
-    single(reflectance_painting_cube), ...   % data
-    imgPath, ...     % output filename
-    'bsq', ...                               % interleave
-    'Precision','single',...                     % data type
-    'Offset',0 ...         % no header offset
-);
-
-% Create the matching .hdr file 
-fid = fopen(hdrPath,'w');
-fprintf(fid,'ENVI\n');
-fprintf(fid,'samples = %d\n', size(reflectance_painting_cube,2));
-fprintf(fid,'lines   = %d\n', size(reflectance_painting_cube,1));
-fprintf(fid,'bands   = %d\n', size(reflectance_painting_cube,3));
-fprintf(fid,'header offset = 0\n');
-fprintf(fid,'data type = 4\n');            % 4 = 32-bit float
-fprintf(fid,'interleave = bsq\n');
-fprintf(fid,'byte order = 0\n');           % 0 = little endian
-fprintf(fid,'wavelength = {\n');
-for k = 1:numel(wl)
-    if k==1
-        fprintf(fid,'  %.2f', wl(k));
-    else
-        fprintf(fid,', %.2f', wl(k));
-    end
-    if mod(k,8)==0
-        fprintf(fid,'\n');
-    end
-end
-fprintf(fid,'}\n');
-fclose(fid);
+% destFolder = '../../../../data/processed/reflectance';  
+% if ~exist(destFolder,'dir')
+%     mkdir(destFolder);
+% end
+% 
+% % build full filenames
+% imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.img');
+% hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.hdr');
+% 
+% 
+% % Write the multi‐band binary (.img) as single‐precision BSQ 
+% multibandwrite(...
+%     single(reflectance_painting_cube), ...   % data
+%     imgPath, ...     % output filename
+%     'bsq', ...                               % interleave
+%     'Precision','single',...                     % data type
+%     'Offset',0 ...         % no header offset
+% );
+% 
+% % Create the matching .hdr file 
+% fid = fopen(hdrPath,'w');
+% fprintf(fid,'ENVI\n');
+% fprintf(fid,'samples = %d\n', size(reflectance_painting_cube,2));
+% fprintf(fid,'lines   = %d\n', size(reflectance_painting_cube,1));
+% fprintf(fid,'bands   = %d\n', size(reflectance_painting_cube,3));
+% fprintf(fid,'header offset = 0\n');
+% fprintf(fid,'data type = 4\n');            % 4 = 32-bit float
+% fprintf(fid,'interleave = bsq\n');
+% fprintf(fid,'byte order = 0\n');           % 0 = little endian
+% fprintf(fid,'wavelength = {\n');
+% for k = 1:numel(wl)
+%     if k==1
+%         fprintf(fid,'  %.2f', wl(k));
+%     else
+%         fprintf(fid,', %.2f', wl(k));
+%     end
+%     if mod(k,8)==0
+%         fprintf(fid,'\n');
+%     end
+% end
+% fprintf(fid,'}\n');
+% fclose(fid);

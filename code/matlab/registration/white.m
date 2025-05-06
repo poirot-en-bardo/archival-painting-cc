@@ -49,7 +49,8 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 
 %% Load cardboard scan
 
-board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_001_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T162625_raw_rad_float32.hdr";
+% board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_001_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T162625_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_002_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T164131_raw_rad_float32.hdr";
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -66,7 +67,8 @@ board_cube = board_cube(:,:, mask_wl);
 
 %%
 
-painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
+% painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
+painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_002_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T112522_raw_rad_float32.hdr";
 painting_scan = hypercube(painting_hdr);
 painting_cube = painting_scan.DataCube;
 
@@ -104,10 +106,10 @@ board_cube = board_cube(start_row:end_row,:,:);
 % height = rect(4);
 
 % coordinates extracted earlier, for repeatability
-xmin = 1018;
-ymin = 4;
-width = 777;
-height = 156;
+xmin = 1030;
+ymin = 7;
+width = 764;
+height = 146;
 
 %% Apply the rectangle to crop the spectralon cube
 sp_crop = sp_cube(ymin:(ymin+height), xmin:(xmin+width), :);
@@ -215,20 +217,15 @@ imshow(ref_painting1(:,:,band_no),[]);
 title(sprintf('Painting Reflectance Clipped - band %d', band_no));
 
 
-
-
-
-
-
 %% Masking
 
 % mask out everything > 1
-band_vis = band;
-band_vis(band_vis>1) = 0;
-
-figure;
-imshow(band_vis, []);
-title(sprintf('Painting Reflectance (values >1 masked out) - band %d', band_no));
+% band_vis = band;
+% band_vis(band_vis>1) = 0;
+% 
+% figure;
+% imshow(band_vis, []);
+% title(sprintf('Painting Reflectance (values >1 masked out) - band %d', band_no));
 
 
 %% Saving the reflectance cube
@@ -239,8 +236,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_left.hdr');
+imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_right.img');
+hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_right.hdr');
 
 
 % Write the multi‐band binary (.img) as single‐precision BSQ 
