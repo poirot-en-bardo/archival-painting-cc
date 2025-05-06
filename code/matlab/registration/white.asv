@@ -49,7 +49,7 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 
 %% Load cardboard scan
 
-board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_001_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T162625_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/radiance/whitetarget_LED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-14T181533_raw_rad_float32.hdr";
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -212,13 +212,7 @@ ref_painting1(ref_painting1 > 1) = 1;
 %%
 figure;
 imshow(ref_painting1(:,:,band_no),[]);
-title(sprintf('Painting Reflectance Clipped - band %d', band_no));
-
-
-
-
-
-
+title('Painting Reflectance Clipped - band 80');
 
 %% Masking
 
@@ -228,7 +222,7 @@ band_vis(band_vis>1) = 0;
 
 figure;
 imshow(band_vis, []);
-title(sprintf('Painting Reflectance (values >1 masked out) - band %d', band_no));
+title('Painting Reflectance (values >1 masked out) - band 80');
 
 
 %% Saving the reflectance cube
