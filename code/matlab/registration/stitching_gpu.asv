@@ -2,8 +2,8 @@ clear; close all;
 %% File paths
 % hdr1 = "/home/oem/eliza/data/radiance/cactusLED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T120127_raw_rad_float32.hdr";
 % hdr2 = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
-hdr1 = "/home/oem/eliza/data/processed/reflectance/cactus_halogen_reflectance_left.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/cactus_halogen_reflectance_right.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/cactus_led_reflectance_left.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/cactus_led_reflectance_right.hdr";
 
 %% ——— 1) Load cubes via hypercube (all on CPU) —————
 hc1 = hypercube(hdr1);
@@ -256,7 +256,45 @@ figure;
 imshow(RGB);
 title('Stitched Cube Rendered under D65');
 
+
+
+%%sRGB
+sRGB = xyz2rgb(XYZimg, 'ColorSpace','srgb');
+% clamp to [0,1]
+sRGB = max(min(sRGB,1),0);
+figure;
+imshow(RGB);
+title('Stitched Cube Rendered under D65');
+
+
+
+%% 2) Convert XYZ → linear ProPhoto-RGB, then gamma-encode (γ=1/1.8)
+pPhotoLinear = xyz2rgb(XYZimg, 'ColorSpace','prophoto-rgb');
+% clamp linear ProPhoto
+pPhotoLinear = max(min(pPhotoLinear,1),0);
+% apply ProPhoto display gamma
+gamma = 1/ 1.8;
+pPhotoGamma = pPhotoLinear .^ gamma;
+% clamp again
+pPhotoGamma = max(min(pPhotoGamma,1),0);
+
+%% 3) Scale to uint16 and save
+
+% sRGB → uint16 (0→0, 1→65535)
+sRGB16 = uint16(sRGB * 65535);
+
+% ProPhoto → uint16
+pPhoto16 = uint16(pPhotoGamma * 65535);
+
+
+% imwrite(pPhoto16, 'render_ProPhoto_16bit.png');
+% imwrite(sRGB16, 'render_sRGB_16bit.png');
+
 %%
-R = stitched_cube(:);
-fprintf("Reflectance stats: min=%.3f   1st pct=%.3f   median=%.3f   99th pct=%.3f   max=%.3f\n", ...
-    prctile(R,0), prctile(R,1), prctile(R,50), prctile(R,99), prctile(R,100) );
+% 3) Visualize directly (imshow knows how to display uint16):
+figure; imshow(sRGB16);
+title('sRGB (16-bit)');
+
+figure; imshow(pPhoto16);
+title('ProPhoto (16-bit, γ-encoded)');
+

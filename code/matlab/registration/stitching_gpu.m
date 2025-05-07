@@ -172,47 +172,47 @@ title('Stream-stitched Hyperspectral Cube');
 
 %% saving the stitched radiance cube
 
-% destFolder = '../../../../data/processed';  
-% if ~exist(destFolder,'dir')
-%     mkdir(destFolder);
-% end
-% 
-% % build full filenames
-% imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.img');
-% hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.hdr');
-% 
-% [rows, cols, bands] = size(stitchedCPU);
-% 
-% multibandwrite( ...
-%     stitchedCPU, ...       % data array
-%     imgPath, ...           % full path
-%     'bsq', ...             % band-sequential
-%     'Precision','single',...% 32-bit float
-%     'Offset',0 ...         % no header offset
-% );
-% 
-% % write the .hdr as before
-% hdrFID = fopen(hdrPath,'w');
-% fprintf(hdrFID,'ENVI\n');
-% fprintf(hdrFID,'samples = %d\n', cols);
-% fprintf(hdrFID,'lines   = %d\n', rows);
-% fprintf(hdrFID,'bands   = %d\n', bands);
-% fprintf(hdrFID,'header offset = 0\n');
-% fprintf(hdrFID,'file type = ENVI Standard\n');
-% fprintf(hdrFID,'data type = 4\n');       % single
-% fprintf(hdrFID,'interleave = bsq\n');
-% fprintf(hdrFID,'byte order = 0\n');      % 0→little-endian
-% 
-% fprintf(hdrFID,'wavelength units = nm\n');
-% fprintf(hdrFID,'wavelength = {');
-% for k = 1:bands
-%     fprintf(hdrFID,'%g', wl(k));
-%     if k<bands
-%         fprintf(hdrFID,',');
-%     end
-% end
-% fprintf(hdrFID,'}\n');
-% fclose(hdrFID);
+destFolder = '../../../../data/processed';  
+if ~exist(destFolder,'dir')
+    mkdir(destFolder);
+end
+
+% build full filenames
+imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.img');
+hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.hdr');
+
+[rows, cols, bands] = size(stitched_cube);
+
+multibandwrite( ...
+    stitched_cube, ...       % data array
+    imgPath, ...           % full path
+    'bsq', ...             % band-sequential
+    'Precision','single',...% 32-bit float
+    'Offset',0 ...         % no header offset
+);
+
+% write the .hdr as before
+hdrFID = fopen(hdrPath,'w');
+fprintf(hdrFID,'ENVI\n');
+fprintf(hdrFID,'samples = %d\n', cols);
+fprintf(hdrFID,'lines   = %d\n', rows);
+fprintf(hdrFID,'bands   = %d\n', bands);
+fprintf(hdrFID,'header offset = 0\n');
+fprintf(hdrFID,'file type = ENVI Standard\n');
+fprintf(hdrFID,'data type = 4\n');       % single
+fprintf(hdrFID,'interleave = bsq\n');
+fprintf(hdrFID,'byte order = 0\n');      % 0→little-endian
+
+fprintf(hdrFID,'wavelength units = nm\n');
+fprintf(hdrFID,'wavelength = {');
+for k = 1:bands
+    fprintf(hdrFID,'%g', wl(k));
+    if k<bands
+        fprintf(hdrFID,',');
+    end
+end
+fprintf(hdrFID,'}\n');
+fclose(hdrFID);
 
 
 %% Rendering under D65:
@@ -242,33 +242,22 @@ XYZ = (linCube * S) ./ k;        % [N×3]
 % Reshape back to image
 XYZimg = reshape(XYZ, rows, cols, 3);
 
-%% ——— 6) Convert to ProPhoto-RGB and display —————
-RGB = xyz2rgb(XYZimg, 'ColorSpace','prophoto-rgb'); 
-
-RGB16 = im2uint16(RGB);  % scales [0,1]→[0,65535]
-
-figure; imshow(RGB16);  
-title('16-bit');
-% clamp to [0,1] for display
-RGB(RGB<0) = 0;  RGB(RGB>1) = 1;    
-
-figure;
-imshow(RGB);
-title('Stitched Cube Rendered under D65');
+%% Convert to RGB and display —————
 
 
-
-%% 1) Convert XYZ → sRGB
+%sRGB
 sRGB = xyz2rgb(XYZimg, 'ColorSpace','srgb');
 % clamp to [0,1]
 sRGB = max(min(sRGB,1),0);
 
-%% 2) Convert XYZ → linear ProPhoto-RGB, then gamma-encode (γ=1/1.8)
+
+
+%% ProPhoto-RGB and gamma-encode 
 pPhotoLinear = xyz2rgb(XYZimg, 'ColorSpace','prophoto-rgb');
 % clamp linear ProPhoto
 pPhotoLinear = max(min(pPhotoLinear,1),0);
 % apply ProPhoto display gamma
-gamma = 1/1.8;
+gamma = 1/ 1.8;
 pPhotoGamma = pPhotoLinear .^ gamma;
 % clamp again
 pPhotoGamma = max(min(pPhotoGamma,1),0);
@@ -281,14 +270,18 @@ sRGB16 = uint16(sRGB * 65535);
 % ProPhoto → uint16
 pPhoto16 = uint16(pPhotoGamma * 65535);
 
-
-% imwrite(pPhoto16, 'render_ProPhoto_16bit.png');
-% imwrite(sRGB16, 'render_sRGB_16bit.png');
+%%
+imwrite(pPhoto16, 'plots/cactus_halogen_ProPhoto_gamma.png');
+imwrite(sRGB16, 'plots/cactus_halogen_sRGB.png');
+imwrite(pPhotoLinear, 'plots/cactus_halogen_pPhotoLinear.png');
 
 %%
 % 3) Visualize directly (imshow knows how to display uint16):
 figure; imshow(sRGB16);
 title('sRGB (16-bit)');
-
+%%
 figure; imshow(pPhoto16);
 title('ProPhoto (16-bit, γ-encoded)');
+%%
+figure; imshow(pPhotoLinear);
+title('ProPhoto linear');

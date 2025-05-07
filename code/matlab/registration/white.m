@@ -50,7 +50,9 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 %% Load cardboard scan
 
 % board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_001_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T162625_raw_rad_float32.hdr";
-board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_002_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T164131_raw_rad_float32.hdr";
+% board_hdr = "/home/oem/eliza/data/radiance/whitetarget_halogen_002_VNIR_1800_SN00841_HSNR3_24998us_2025-04-14T164131_raw_rad_float32.hdr";
+% board_hdr = "/home/oem/eliza/data/radiance/whitetarget_LED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-14T181533_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/radiance/whitetarget_LED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-14T183254_raw_rad_float32.hdr";
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -68,7 +70,7 @@ board_cube = board_cube(:,:, mask_wl);
 %%
 
 % painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
-painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_002_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T112522_raw_rad_float32.hdr";
+painting_hdr = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
 painting_scan = hypercube(painting_hdr);
 painting_cube = painting_scan.DataCube;
 
@@ -236,8 +238,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_right.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_right.hdr');
+imgPath = fullfile(destFolder, 'cactus_led_reflectance_right.img');
+hdrPath = fullfile(destFolder, 'cactus_led_reflectance_right.hdr');
 
 
 % Write the multi‐band binary (.img) as single‐precision BSQ 
