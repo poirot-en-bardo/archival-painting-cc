@@ -1,4 +1,4 @@
-hdr_path = "/home/oem/eliza/data/processed/yoda_halogen_reflectance_full.hdr";
+hdr_path = "/home/oem/eliza/data/processed/cactus_led_reflectance_full.hdr";
 
 cube_data = hypercube(hdr_path);
 wl  = cube_data.Wavelength;               % assume same for both
@@ -47,8 +47,8 @@ sRGB16 = uint16(sRGB * 65535);
 pPhoto = uint16(pPhoto * 65535);
 
 %%
-imwrite(sRGB16, 'plots/yoda_halogen_sRGB.png');
-imwrite(pPhoto, 'plots/yoda_halogen_pPhoto.png');
+imwrite(sRGB16, 'plots/cactus_led_sRGB.png');
+imwrite(pPhoto, 'plots/cactus_led_pPhoto.png');
 
 %%
 figure; imshow(sRGB16);
