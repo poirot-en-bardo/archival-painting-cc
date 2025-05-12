@@ -2,8 +2,8 @@ clear; close all;
 %% File paths
 % hdr1 = "/home/oem/eliza/data/radiance/cactusLED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T120127_raw_rad_float32.hdr";
 % hdr2 = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
-hdr1 = "/home/oem/eliza/data/processed/reflectance/cactus_halogen_reflectance_left.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/cactus_halogen_reflectance_right.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/yoda_led_reflectance_left.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/yoda_led_reflectance_right.hdr";
 
 %% ——— 1) Load cubes via hypercube (all on CPU) —————
 hc1 = hypercube(hdr1);
@@ -178,8 +178,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.hdr');
+imgPath = fullfile(destFolder, 'yoda_led_reflectance_full.img');
+hdrPath = fullfile(destFolder, 'yoda_led_reflectance_full.hdr');
 
 [rows, cols, bands] = size(stitched_cube);
 
@@ -247,41 +247,32 @@ XYZimg = reshape(XYZ, rows, cols, 3);
 
 %sRGB
 sRGB = xyz2rgb(XYZimg, 'ColorSpace','srgb');
+
 % clamp to [0,1]
-sRGB = max(min(sRGB,1),0);
+% sRGB = max(min(sRGB,1),0);
 
 
 
-%% ProPhoto-RGB and gamma-encode 
-pPhotoLinear = xyz2rgb(XYZimg, 'ColorSpace','prophoto-rgb');
-% clamp linear ProPhoto
-pPhotoLinear = max(min(pPhotoLinear,1),0);
-% apply ProPhoto display gamma
-gamma = 1/ 1.8;
-pPhotoGamma = pPhotoLinear .^ gamma;
-% clamp again
-pPhotoGamma = max(min(pPhotoGamma,1),0);
+%% ProPhoto-RGB 
+pPhoto = xyz2rgb(XYZimg, 'ColorSpace','prophoto-rgb');
+
 
 %% 3) Scale to uint16 and save
-
 % sRGB → uint16 (0→0, 1→65535)
 sRGB16 = uint16(sRGB * 65535);
 
 % ProPhoto → uint16
-pPhoto16 = uint16(pPhotoGamma * 65535);
+pPhoto = uint16(pPhoto * 65535);
 
 %%
-imwrite(pPhoto16, 'plots/cactus_halogen_ProPhoto_gamma.png');
-imwrite(sRGB16, 'plots/cactus_halogen_sRGB.png');
-imwrite(pPhotoLinear, 'plots/cactus_halogen_pPhotoLinear.png');
+imwrite(sRGB16, 'plots/yoda_led_sRGB.png');
+imwrite(pPhoto, 'plots/yoda_led_pPhotoLinear.png');
 
 %%
 % 3) Visualize directly (imshow knows how to display uint16):
 figure; imshow(sRGB16);
 title('sRGB (16-bit)');
 %%
-figure; imshow(pPhoto16);
-title('ProPhoto (16-bit, γ-encoded)');
-%%
-figure; imshow(pPhotoLinear);
-title('ProPhoto linear');
+figure; imshow(pPhoto);
+title('ProPhoto (16-bit)');
+

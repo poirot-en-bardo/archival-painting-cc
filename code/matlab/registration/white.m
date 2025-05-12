@@ -70,7 +70,7 @@ board_cube = board_cube(:,:, mask_wl);
 %%
 
 % painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
-painting_hdr = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
+painting_hdr = "/home/oem/eliza/data/radiance/yodaLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T133107_raw_rad_float32.hdr";
 painting_scan = hypercube(painting_hdr);
 painting_cube = painting_scan.DataCube;
 
@@ -238,8 +238,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_led_reflectance_right.img');
-hdrPath = fullfile(destFolder, 'cactus_led_reflectance_right.hdr');
+imgPath = fullfile(destFolder, 'yoda_led_reflectance_right.img');
+hdrPath = fullfile(destFolder, 'yoda_led_reflectance_right.hdr');
 
 
 % Write the multi‐band binary (.img) as single‐precision BSQ 
