@@ -269,7 +269,6 @@ imwrite(sRGB16, 'plots/yoda_led_sRGB.png');
 imwrite(pPhoto, 'plots/yoda_led_pPhotoLinear.png');
 
 %%
-% 3) Visualize directly (imshow knows how to display uint16):
 figure; imshow(sRGB16);
 title('sRGB (16-bit)');
 %%
