@@ -1,7 +1,5 @@
 clear; close all;
 %% File paths
-% hdr1 = "/home/oem/eliza/data/radiance/cactusLED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T120127_raw_rad_float32.hdr";
-% hdr2 = "/home/oem/eliza/data/radiance/cactusLED_002_VNIR_1800_SN00841_HSNR1_94998us_2025-04-15T121755_raw_rad_float32.hdr";
 hdr1 = "/home/oem/eliza/data/processed/reflectance/yoda_led_reflectance_left.hdr";
 hdr2 = "/home/oem/eliza/data/processed/reflectance/yoda_led_reflectance_right.hdr";
 

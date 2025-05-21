@@ -1,4 +1,4 @@
-hdr_path = "/home/oem/eliza/data/processed/cactus_led_reflectance_full.hdr";
+hdr_path = "/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr";
 
 cube_data = hypercube(hdr_path);
 wl  = cube_data.Wavelength;               % assume same for both
@@ -29,8 +29,6 @@ XYZ = (linCube * S) ./ k;        % [N×3]
 XYZimg = reshape(XYZ, rows, cols, 3);
 
 %% Convert to RGB —————
-
-
 %sRGB
 sRGB = xyz2rgb(XYZimg, 'ColorSpace','srgb');
 
@@ -47,8 +45,16 @@ sRGB16 = uint16(sRGB * 65535);
 pPhoto = uint16(pPhoto * 65535);
 
 %%
-imwrite(sRGB16, 'plots/cactus_led_sRGB.png');
-imwrite(pPhoto, 'plots/cactus_led_pPhoto.png');
+outDir  = fullfile('/home/oem/eliza/mac-shared/HSI/before');
+if ~exist(outDir, 'dir')
+    mkdir(outDir);
+end
+outFile = fullfile(outDir, 'cactus_halogen_D65_sRGB.png');
+imwrite(sRGB16, outFile);
+
+outFile = fullfile(outDir, 'cactus_halogen_D65_pPhoto.png');
+imwrite(pPhoto, outFile);
+
 
 %%
 figure; imshow(sRGB16);
