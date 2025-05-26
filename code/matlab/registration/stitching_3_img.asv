@@ -4,9 +4,9 @@
 clear; close all; clc;
 
 %% ——— 1) File paths & load hypercubes —————
-hdr1 = "/home/oem/eliza/data/processed/reflectance/intermediary/cactus_halogen_reflectance_left_inter.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/intermediary/cactus_halogen_reflectance_mid_inter.hdr";
-hdr3 = "/home/oem/eliza/data/processed/reflectance/intermediary/cactus_halogen_reflectance_right_inter.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_left_after.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_mid_after.hdr";
+hdr3 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_right_after.hdr";
 
 hc1 = hypercube(hdr1);   % moving image #1
 hc2 = hypercube(hdr2);   % fixed reference image
@@ -43,7 +43,7 @@ ptsMov3  = detectSIFTFeatures(mov3Norm);
 [featMov3,validMov3]  = extractFeatures(mov3Norm, ptsMov3);
 
 % Match & estimate transformation for hc1 → hc2
-idx12 = matchFeatures(featFix, featMov1, 'MaxRatio',0.6, 'MatchThreshold', 70,'Unique',true);
+idx12 = matchFeatures(featFix, featMov1, 'MaxRatio',0.2, 'MatchThreshold', 1, 'Unique',true);
 matchedFix12  = validFix(idx12(:,1));
 matchedMov1   = validMov1(idx12(:,2));
 [tform12,~] = estimateGeometricTransform2D(...
@@ -51,7 +51,7 @@ matchedMov1   = validMov1(idx12(:,2));
     'MaxDistance',1.5,'Confidence',99.9,'MaxNumTrials',2000);
 
 % Match & estimate transformation for hc3 → hc2
-idx32 = matchFeatures(featFix, featMov3, 'MaxRatio',0.6, 'MatchThreshold', 0,'Unique',true);
+idx32 = matchFeatures(featFix, featMov3, 'MaxRatio', 0.15, 'MatchThreshold', 1., 'Unique',true);
 matchedFix32  = validFix(idx32(:,1));
 matchedMov3   = validMov3(idx32(:,2));
 [tform32,~] = estimateGeometricTransform2D(...
@@ -71,18 +71,29 @@ showMatchedFeatures(fixNorm, mov3Norm, matchedFix32, matchedMov3, 'montage');
 title('hc3 → hc2 Inliers');
 
 %% ——— 4) Compute combined output view covering all three extents ———
-[xW12,yW12] = outputLimits(tform12, [1 hc1.ImageSize(2)], [1 hc1.ImageSize(1)]);
-[xW32,yW32] = outputLimits(tform32, [1 hc3.ImageSize(2)], [1 hc3.ImageSize(1)]);
-xF = Rfixed.XWorldLimits;  yF = Rfixed.YWorldLimits;
+% get spatial size of hc1 and hc3 from their DataCube
+[ h1, w1, ~ ] = size( hc1.DataCube );
+[ h3, w3, ~ ] = size( hc3.DataCube );
 
-xMin = min([xF(1), xW12(1), xW32(1)]);
-xMax = max([xF(2), xW12(2), xW32(2)]);
-yMin = min([yF(1), yW12(1), yW32(1)]);
-yMax = max([yF(2), yW12(2), yW32(2)]);
+% now compute the warped extents
+[xW12, yW12] = outputLimits( tform12, [1 w1], [1 h1] );
+[xW32, yW32] = outputLimits( tform32, [1 w3], [1 h3] );
 
+% get the fixed‐image (hc2) world limits from Rfixed
+xF = Rfixed.XWorldLimits;
+yF = Rfixed.YWorldLimits;
+
+% union all three
+xMin = min([ xF(1), xW12(1), xW32(1) ]);
+xMax = max([ xF(2), xW12(2), xW32(2) ]);
+yMin = min([ yF(1), yW12(1), yW32(1) ]);
+yMax = max([ yF(2), yW12(2), yW32(2) ]);
+
+% build the outputView
 outW = round(xMax - xMin);
 outH = round(yMax - yMin);
-outputView = imref2d([outH outW], [xMin xMax], [yMin yMax]);
+outputView = imref2d([ outH, outW ], [ xMin xMax ], [ yMin yMax ]);
+
 
 %% ——— 5) Warp & composite all three cubes ———
 stitched_cube = zeros(outH, outW, nBands, 'single');
@@ -119,11 +130,12 @@ figure; imshow(colorize(hc_stitched, 'Method','RGB','ContrastStretching',true));
 title('Three-cube Stitched Hypercube');
 
 % Save as ENVI .img/.hdr
-destFolder = '../../../../data/processed';
+destFolder = '../../../../data/processed/reflectance/after';
 if ~exist(destFolder,'dir'), mkdir(destFolder); end
-imgPath = fullfile(destFolder,'cactus_halogen_reflectance_inter_full.img');
-hdrPath = fullfile(destFolder,'cactus_halogen_reflectance_inter_full.hdr');
+imgPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.img');
+hdrPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.hdr');
 
+%%
 multibandwrite(stitched_cube, imgPath, 'bsq','Precision','single','Offset',0);
 
 fid = fopen(hdrPath,'w');
