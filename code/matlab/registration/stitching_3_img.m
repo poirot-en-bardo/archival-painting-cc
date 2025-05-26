@@ -1,0 +1,156 @@
+%% Three-image Hyperspectral Stitching Script
+% Stitches hc1, hc2, and hc3 into a single cube referenced to hc2’s coordinate frame.
+
+clear; close all; clc;
+
+%% ——— 1) File paths & load hypercubes —————
+hdr1 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_left_after.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_mid_after.hdr";
+hdr3 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_right_after.hdr";
+
+hc1 = hypercube(hdr1);   % moving image #1
+hc2 = hypercube(hdr2);   % fixed reference image
+hc3 = hypercube(hdr3);   % moving image #3
+
+wl = hc2.Wavelength;     
+
+%% ——— 2) Band mask (380–780 nm) ———————————
+mask   = wl >= 380 & wl <= 780;
+wl     = wl(mask);
+nBands = sum(mask);
+
+%% ——— 3) Registration estimation on band refBand ———
+refBand = 80;  % choose a mid-range band for registration
+
+% Extract & threshold the registration band
+threshold = 1;  
+fixRef   = double(gather(hc2.DataCube(:,:,refBand))); fixRef(fixRef>threshold)=threshold;
+mov1Ref  = double(gather(hc1.DataCube(:,:,refBand))); mov1Ref(mov1Ref>threshold)=threshold;
+mov3Ref  = double(gather(hc3.DataCube(:,:,refBand))); mov3Ref(mov3Ref>threshold)=threshold;
+
+% Normalize & enhance contrast
+fixNorm  = imadjust((fixRef  - min(fixRef(:)))  / (max(fixRef(:))  - min(fixRef(:))));
+mov1Norm = imadjust((mov1Ref - min(mov1Ref(:))) / (max(mov1Ref(:)) - min(mov1Ref(:))));
+mov3Norm = imadjust((mov3Ref - min(mov3Ref(:))) / (max(mov3Ref(:)) - min(mov3Ref(:))));
+
+% Detect and extract SIFT features
+ptsFix   = detectSIFTFeatures(fixNorm);
+ptsMov1  = detectSIFTFeatures(mov1Norm);
+ptsMov3  = detectSIFTFeatures(mov3Norm);
+
+[featFix, validFix]   = extractFeatures(fixNorm,   ptsFix);
+[featMov1,validMov1]  = extractFeatures(mov1Norm, ptsMov1);
+[featMov3,validMov3]  = extractFeatures(mov3Norm, ptsMov3);
+
+% Match & estimate transformation for hc1 → hc2
+idx12 = matchFeatures(featFix, featMov1, 'MaxRatio',0.2, 'MatchThreshold', 1, 'Unique',true);
+matchedFix12  = validFix(idx12(:,1));
+matchedMov1   = validMov1(idx12(:,2));
+[tform12,~] = estimateGeometricTransform2D(...
+    matchedMov1, matchedFix12, 'affine', ...
+    'MaxDistance',1.5,'Confidence',99.9,'MaxNumTrials',2000);
+
+% Match & estimate transformation for hc3 → hc2
+idx32 = matchFeatures(featFix, featMov3, 'MaxRatio', 0.15, 'MatchThreshold', 2, 'Unique',true);
+matchedFix32  = validFix(idx32(:,1));
+matchedMov3   = validMov3(idx32(:,2));
+[tform32,~] = estimateGeometricTransform2D(...
+    matchedMov3, matchedFix32, 'affine', ...
+    'MaxDistance',1.5,'Confidence',99.9,'MaxNumTrials',2000);
+
+% Spatial reference for the fixed image (hc2)
+fixSize = size(fixRef);
+Rfixed  = imref2d(fixSize);
+
+% Visualize inliers (optional)
+figure;
+showMatchedFeatures(fixNorm, mov1Norm, matchedFix12, matchedMov1, 'montage');
+title('hc1 → hc2 Inliers');
+figure;
+showMatchedFeatures(fixNorm, mov3Norm, matchedFix32, matchedMov3, 'montage');
+title('hc3 → hc2 Inliers');
+
+%% ——— 4) Compute combined output view covering all three extents ———
+% get spatial size of hc1 and hc3 from their DataCube
+[ h1, w1, ~ ] = size( hc1.DataCube );
+[ h3, w3, ~ ] = size( hc3.DataCube );
+
+% now compute the warped extents
+[xW12, yW12] = outputLimits( tform12, [1 w1], [1 h1] );
+[xW32, yW32] = outputLimits( tform32, [1 w3], [1 h3] );
+
+% get the fixed‐image (hc2) world limits from Rfixed
+xF = Rfixed.XWorldLimits;
+yF = Rfixed.YWorldLimits;
+
+% union all three
+xMin = min([ xF(1), xW12(1), xW32(1) ]);
+xMax = max([ xF(2), xW12(2), xW32(2) ]);
+yMin = min([ yF(1), yW12(1), yW32(1) ]);
+yMax = max([ yF(2), yW12(2), yW32(2) ]);
+
+% build the outputView
+outW = round(xMax - xMin);
+outH = round(yMax - yMin);
+outputView = imref2d([ outH, outW ], [ xMin xMax ], [ yMin yMax ]);
+
+
+%% ——— 5) Warp & composite all three cubes ———
+stitched_cube = zeros(outH, outW, nBands, 'single');
+
+for b = 1:nBands
+    % Load and threshold each band
+    fixB = single(gather(hc2.DataCube(:,:,b))); fixB(fixB>threshold)=threshold;
+    mov1B= single(gather(hc1.DataCube(:,:,b))); mov1B(mov1B>threshold)=threshold;
+    mov3B= single(gather(hc3.DataCube(:,:,b))); mov3B(mov3B>threshold)=threshold;
+
+    % Warp fixed (hc2) by identity
+    wFix = imwarp(fixB, affine2d(eye(3)), 'OutputView', outputView);
+
+    % Warp hc1 → hc2
+    w1 = imwarp(mov1B, tform12, 'OutputView', outputView);
+
+    % Warp hc3 → hc2
+    w3 = imwarp(mov3B, tform32, 'OutputView', outputView);
+
+    % Composite: start with fixed, fill holes with hc1, then hc3
+    out = wFix;
+    mask2 = (out == 0);
+    out(mask2) = w1(mask2);
+    mask3 = (out == 0);
+    out(mask3) = w3(mask3);
+
+    stitched_cube(:,:,b) = out;
+end
+
+%% ——— 6) Visualize & save the result ———
+% Quick false-color preview:
+hc_stitched = hypercube(stitched_cube, wl);
+figure; imshow(colorize(hc_stitched, 'Method','RGB','ContrastStretching',true));
+title('Three-cube Stitched Hypercube');
+
+% Save as ENVI .img/.hdr
+destFolder = '../../../../data/processed/reflectance/after';
+if ~exist(destFolder,'dir'), mkdir(destFolder); end
+imgPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.img');
+hdrPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.hdr');
+
+%%
+multibandwrite(stitched_cube, imgPath, 'bsq','Precision','single','Offset',0);
+
+fid = fopen(hdrPath,'w');
+fprintf(fid,'ENVI\n');
+fprintf(fid,'samples = %d\n', outW);
+fprintf(fid,'lines   = %d\n', outH);
+fprintf(fid,'bands   = %d\n', nBands);
+fprintf(fid,'header offset = 0\n');
+fprintf(fid,'data type = 4\n');           % float32
+fprintf(fid,'interleave = bsq\n');
+fprintf(fid,'byte order = 0\n');
+fprintf(fid,'wavelength = {');
+for k = 1:nBands
+    fprintf(fid,'%.2f', wl(k));
+    if k<nBands, fprintf(fid,','); end
+end
+fprintf(fid,'}\n');
+fclose(fid);
