@@ -36,15 +36,18 @@ scream_rgb = uint16(reshape(rgb, m, n, 3) .* roof);
 
 %% Fourier Analysis
 
-img_path = '/Volumes/School/Thesis/thesis-repo/data/scream/scream_rgb.png';
+img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/deltae.png';
 scream_rgb = imread(img_path);
 
+%%
 % Convert RGB to greyscale (using standard luminance formula)
 scream_grey = rgb2gray(scream_rgb);
 
 % Normalise to double for FFT ([0, 1])
 scream_grey = double(scream_grey) / double(roof);
-
+%%
+img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/deltae.png';
+scream_grey = imread(img_path);
 F = fft2(scream_grey);
 F_shifted = fftshift(F); % Shift zero frequency to center
 
@@ -66,7 +69,7 @@ magnitude_spectrum = mat2gray(log(abs(F_shifted)));
 [rows, cols] = size(F_shifted);
 
 % radius for low-frequency cutoff (in pixels)
-low_freq_radius = min(rows, cols) / 500;  
+low_freq_radius = min(rows, cols) / 100;  
 
 % grid of distance values from the center
 [X, Y] = meshgrid(1:cols, 1:rows);
@@ -93,13 +96,13 @@ low_freq_magnitude_norm = mat2gray(low_freq_magnitude);
 high_freq_magnitude_norm = mat2gray(high_freq_magnitude);
 
 % Display and save the low-frequency and high-frequency images
-figure;
-imshow(low_freq_magnitude_norm);
-title('Low Frequencies');
-
-figure;
-imshow(high_freq_magnitude_norm);
-title('High Frequencies');
+% figure;
+% imshow(low_freq_magnitude_norm);
+% title('Low Frequencies');
+% 
+% figure;
+% imshow(high_freq_magnitude_norm);
+% title('High Frequencies');
 
 %%
 % Apply inverse FFT to get the spatial domain images 

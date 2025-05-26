@@ -1,10 +1,14 @@
 
 img_folder = '../../../data/scream/mod';
 % mod_img_path = '../../../data/scream/mod/scream_low_exp.png';
-mod_img_path = '../../../results/illum_corrected1.png';
+mod_img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/registered_interm.png';
 img_files = dir(fullfile(img_folder, '*.png'));  % Adjust for your file type
-reference_path = '../../../data/scream/scream_rgb.png';
-save_folder = '../../../results/fourier';
+reference_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/ref_interm.png';
+% save_folder = '../../../results/fourier';
+save_folder = 'results/fourier';
+mod_img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_reference_ProPhoto.png';
+reference_path  = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_registered_ProPhoto.png';
+
 
 % For one image
 process_fourier(reference_path, mod_img_path, save_folder);
@@ -54,7 +58,7 @@ function process_fourier(img_path1, img_path2, save_folder)
 
     % Extract frequencies
     [rows, cols] = size(F1_shifted);
-    low_freq_radius = min(rows, cols) / 500;
+    low_freq_radius = min(rows, cols) / 1000;
     [X, Y] = meshgrid(1:cols, 1:rows);
     centerX = floor(cols / 2);
     centerY = floor(rows / 2);

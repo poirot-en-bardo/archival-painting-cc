@@ -3,6 +3,8 @@
 % img_path2 = "/Volumes/School/Thesis/thesis-repo/data/scream/mod/scream_low_exp.png";
 img_path1 = '/Volumes/School/Thesis/thesis-repo/code/matlab/illumination/scream_low_corr.png';
 img_path2 = '/Volumes/School/Thesis/thesis-repo/code/matlab/illumination/scream_verm_high_corr.png';
+img_path1 = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_reference_ProPhoto.png';
+img_path2  = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_registered_ProPhoto.png';
 save_folder = './results/deltaE';
 
 img1 = imread(img_path1);
@@ -49,11 +51,11 @@ end
 
 % or
 % deltaE_map = imcolordiff(lab1, lab2, 'Standard', 'CIEDE2000');
-
+%%
 % Display the ΔE 2000 difference as a heat map
 figure;
 imagesc(deltaE_map);
-% clim([0 10]);
+clim([0 20]);
 colorbar;
 title('ΔE 2000 Difference Heat Map');
 axis image off;
