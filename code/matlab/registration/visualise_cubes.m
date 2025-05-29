@@ -1,8 +1,15 @@
-hdr_path = "/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr";
+hdr_path = "/Volumes/School/Thesis/data/Baby Yoda/Yoda_reflectance.hdr";
 
 cube_data = hypercube(hdr_path);
 wl  = cube_data.Wavelength;               % assume same for both
 cube = cube_data.DataCube;
+
+% Find indices within 380–780 nm
+valid_idx = find(wl >= 380 & wl <= 780);
+
+% Subset cube and wavelengths
+cube = cube(:, :, valid_idx);
+wl = wl(valid_idx);
 
 [rows, cols, B] = size(cube);
 linCube = double( reshape(cube, rows*cols, B) );  
@@ -75,13 +82,13 @@ if ~exist(outDir, 'dir')
     mkdir(outDir);
 end
 outFile = fullfile(outDir, 'yoda_D50_sRGB.png');
-imwrite(sRGB, outFile);
+% imwrite(sRGB, outFile);
 %%
 outFile = fullfile(outDir, 'yoda_D50_pPhoto.png');
 imwrite(pPhoto, outFile);
 %%
 outFile = fullfile(outDir, 'yoda_D50_linear.png');
-imwrite(linear, outFile);
+% imwrite(linear, outFile);
 
 %%
 figure; imshow(sRGB);
