@@ -135,6 +135,8 @@ function X_poly = poly4_features(input_data)
     a = input_data(:,1);
     b = input_data(:,2);
     c = input_data(:,3);
+
+    constant = ones(size(a));
     
     % Degree 1
     feat1  = a;
@@ -178,7 +180,7 @@ function X_poly = poly4_features(input_data)
     feat33 = a .* b.^2 .* c;
     feat34 = a .* b .* c.^2;
     
-    X_poly = [feat1, feat2, feat3, feat4, feat5, feat6, feat7, feat8, feat9, ...
+    X_poly = [constant, feat1, feat2, feat3, feat4, feat5, feat6, feat7, feat8, feat9, ...
               feat10, feat11, feat12, feat13, feat14, feat15, feat16, feat17, feat18, feat19, ...
               feat20, feat21, feat22, feat23, feat24, feat25, feat26, feat27, feat28, ...
               feat29, feat30, feat31, feat32, feat33, feat34];

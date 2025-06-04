@@ -6,8 +6,9 @@ img_files = dir(fullfile(img_folder, '*.png'));  % Adjust for your file type
 reference_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/ref_interm.png';
 % save_folder = '../../../results/fourier';
 save_folder = 'results/fourier';
-mod_img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_reference_ProPhoto.png';
-reference_path  = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_registered_ProPhoto.png';
+
+mod_img_path = '/Volumes/School/Thesis/data/captures/registered/yoda_reg_kodak_halogen.png';
+reference_path = '/Volumes/School/Thesis/data/captures/registered/yoda_ref_hsi_kodak_halogen.png';
 
 
 % For one image
@@ -58,7 +59,7 @@ function process_fourier(img_path1, img_path2, save_folder)
 
     % Extract frequencies
     [rows, cols] = size(F1_shifted);
-    low_freq_radius = min(rows, cols) / 1000;
+    low_freq_radius = min(rows, cols) / 50;
     [X, Y] = meshgrid(1:cols, 1:rows);
     centerX = floor(cols / 2);
     centerY = floor(rows / 2);
@@ -90,10 +91,10 @@ function process_fourier(img_path1, img_path2, save_folder)
     [~, img_name, ~] = fileparts(img_path2);
     
     figure; imshow(low_freq_diff_norm, []); colorbar; title(['Low Frequency Difference - ',img_name], Interpreter="none");
-    saveas(gcf, fullfile(save_folder, [img_name '_low_freq_diff.png']));
+    % saveas(gcf, fullfile(save_folder, [img_name '_low_freq_diff.png']));
     % close;
 
     figure; imshow(high_freq_diff_norm, []); colorbar;  title(['High Frequency Difference - ',img_name], Interpreter="none");
-    saveas(gcf, fullfile(save_folder, [img_name '_high_freq_diff.png']));
+    % saveas(gcf, fullfile(save_folder, [img_name '_high_freq_diff.png']));
     % close;
 end

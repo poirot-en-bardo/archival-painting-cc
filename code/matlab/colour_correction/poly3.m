@@ -116,41 +116,55 @@ evaluate_error(lab_from_xyz_ref, lab_from_xyz_cor, test_idx, m, n, 'XYZ_', outpu
 evaluate_error(lab_ref, corrected_lab, test_idx, m, n, 'Lab_', output_folder, img_name + "_error_poly3.png");
 evaluate_error(lab_from_rgb_ref, lab_from_rgb_cor, test_idx, m, n, 'RGB_', output_folder, img_name + "_error_poly3.png");
 
-%% function for creating the 3rd polynomial expression
+
+%%
+%% --------- Simulate Lab-from-RGB-Only Regression ---------
+% Convert both input and reference RGB to Lab (using the same color space as before)
+lab_from_rgb_input = rgb2lab(rgb_input, 'ColorSpace', 'prophoto-rgb');
+lab_from_rgb_ref   = rgb2lab(rgb_ref,   'ColorSpace', 'prophoto-rgb');
+
+% Use your existing train/test indices
+lab_from_rgb_input_train = lab_from_rgb_input(train_idx, :);
+lab_from_rgb_ref_train   = lab_from_rgb_ref(train_idx, :);
+
+% Train a polynomial regression model in Lab (from RGB only!)
+X_poly_lab_rgb = poly3_features(lab_from_rgb_input_train);
+coeffs_lab_rgb = pinv(X_poly_lab_rgb) * lab_from_rgb_ref_train;
+
+% Apply the model to all data
+X_poly_lab_rgb_all = poly3_features(lab_from_rgb_input);
+corrected_lab_from_rgb = X_poly_lab_rgb_all * coeffs_lab_rgb;
+
+% Evaluate and display ΔE results (Lab-from-RGB as both input and output!)
+output_folder = '../../../results/error_maps';
+if ~exist(output_folder, 'dir'), mkdir(output_folder); end
+
+[~, img_name, ~] = fileparts(cubeFile);
+
+% Compare corrected Lab-from-RGB to reference Lab-from-RGB
+evaluate_error(lab_from_rgb_ref, corrected_lab_from_rgb, test_idx, m, n, ...
+    'LabFromRGB_', output_folder, img_name + "_error_poly3.png");
+
+disp('---------');
+disp('ΔE2000 results for Lab-from-RGB model (i.e., camera-only scenario):');
+
+%% function for creating the 3rd polynomi
+% al expression
 function X_poly = poly3_features(input_data)
-    % Constructs a 3rd-degree polynomial expansion (without constant term)
-    % for a 3-column input. For input columns a, b, c, this returns:
-    % [ a, b, c, a.^2, b.^2, c.^2, a.*b, a.*c, b.*c, ...
-    %   a.^3, b.^3, c.^3, a.^2.*b, a.^2.*c, b.^2.*a, b.^2.*c, c.^2.*a, c.^2.*b, a.*b.*c ]
+    % 3rd-degree polynomial expansion (WITH constant term)
+    % For input [a b c], returns [1, a, b, c, ..., a*b*c]
     a = input_data(:,1);
     b = input_data(:,2);
     c = input_data(:,3);
-    
-    % Degree 1
-    feat1 = a;
-    feat2 = b;
-    feat3 = c;
-    
-    % Degree 2
-    feat4 = a.^2;
-    feat5 = b.^2;
-    feat6 = c.^2;
-    feat7 = a.*b;
-    feat8 = a.*c;
-    feat9 = b.*c;
-    
-    % Degree 3
-    feat10 = a.^3;
-    feat11 = b.^3;
-    feat12 = c.^3;
-    feat13 = a.^2 .* b;
-    feat14 = a.^2 .* c;
-    feat15 = b.^2 .* a;
-    feat16 = b.^2 .* c;
-    feat17 = c.^2 .* a;
-    feat18 = c.^2 .* b;
-    feat19 = a .* b .* c;
-    
-    X_poly = [feat1, feat2, feat3, feat4, feat5, feat6, feat7, feat8, feat9, ...
-              feat10, feat11, feat12, feat13, feat14, feat15, feat16, feat17, feat18, feat19];
+
+    X_poly = [ ...
+        % ones(size(a)), ...         
+        a, b, c, ...
+        a.^2, b.^2, c.^2, ...
+        a.*b, a.*c, b.*c, ...
+        a.^3, b.^3, c.^3, ...
+        a.^2.*b, a.^2.*c, ...
+        b.^2.*a, b.^2.*c, ...
+        c.^2.*a, c.^2.*b, ...
+        a.*b.*c];
 end

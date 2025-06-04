@@ -134,10 +134,12 @@ function X_poly = poly4_simple_features(input_data)
     %
     % Total features = 3 + 3 + 3 + 3 = 12.
     
+    
     a = input_data(:,1);
     b = input_data(:,2);
     c = input_data(:,3);
     
+    constant = ones(size(a));
     % Degree 1
     feat1 = a;
     feat2 = b;
@@ -158,5 +160,5 @@ function X_poly = poly4_simple_features(input_data)
     feat11 = b.^4;
     feat12 = c.^4;
     
-    X_poly = [feat1, feat2, feat3, feat4, feat5, feat6, feat7, feat8, feat9, feat10, feat11, feat12];
+    X_poly = [constant, feat1, feat2, feat3, feat4, feat5, feat6, feat7, feat8, feat9, feat10, feat11, feat12];
 end

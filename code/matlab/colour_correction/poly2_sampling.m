@@ -3,14 +3,14 @@ clc; clear; close all;
 roof = double(intmax('uint16')); % Histogram normalization factor
 
 % Load spectral data
-ill = importdata('../../data/CIE_D65.txt'); % Illuminant
-CMFs_1931 = importdata('../../data/CIE2degCMFs_1931.txt');
+ill = importdata('../..//../data/CIE_D65.txt'); % Illuminant
+CMFs_1931 = importdata('../../../data/CIE2degCMFs_1931.txt');
 CMFs = CMFs_1931;
 rng(10);
 
 %% Select the reference and the cube to be corrected
-cubeFile = "../../data/colorChecker_SG/cubes/cubeCC_fuji-frame4.hdr";
-refFile = "../../data/colorChecker_SG/cubeCC_DigitalSG_REF.hdr";
+cubeFile = "../../../data/colorChecker_SG/cubes/cubeCC_fuji-frame4.hdr";
+refFile = "../../../data/colorChecker_SG/cubeCC_DigitalSG_REF.hdr";
 
 %% Load and process the cubes
 hcube = hypercube(cubeFile);

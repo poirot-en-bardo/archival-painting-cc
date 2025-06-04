@@ -142,6 +142,7 @@ r = rgb_input(:,1);
 g = rgb_input(:,2);
 b = rgb_input(:,3);
 
+constant = ones(size(r));
 % Linear terms (degree 1)
 feat1 = r;
 feat2 = g;
@@ -173,7 +174,7 @@ feat21 = (r.^2 .* b.^2).^(1/4);
 feat22 = (g.^2 .* b.^2).^(1/4);
 
 % Combine all features into one matrix (N x 22)
-X_poly_rgb = [feat1, feat2, feat3, ...
+X_poly_rgb = [constant, feat1, feat2, feat3, ...
                feat4, feat5, feat6, ...
                feat7, feat8, feat9, feat10, feat11, feat12, feat13, ...
                feat14, feat15, feat16, feat17, feat18, feat19, ...

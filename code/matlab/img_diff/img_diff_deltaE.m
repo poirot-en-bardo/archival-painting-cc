@@ -1,14 +1,19 @@
 % Read the images
 % img_path1 = "/Volumes/School/Thesis/thesis-repo/data/scream/mod/scream_verm_exp.png";
 % img_path2 = "/Volumes/School/Thesis/thesis-repo/data/scream/mod/scream_low_exp.png";
-img_path1 = '/Volumes/School/Thesis/thesis-repo/code/matlab/illumination/scream_low_corr.png';
-img_path2 = '/Volumes/School/Thesis/thesis-repo/code/matlab/illumination/scream_verm_high_corr.png';
-img_path1 = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_reference_ProPhoto.png';
-img_path2  = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/prophoto/icc_manual_registered_ProPhoto.png';
+
+img_path1 = '/Volumes/School/Thesis/data/captures/registered/prophoto/yoda1_ref_hsi_after.png';
+img_path2 = '/Volumes/School/Thesis/data/captures/registered/prophoto/yoda1_reg_hsi_before.png';
+img_path1 = '/Volumes/School/Thesis/data/captures/registered/prophoto/cactus1_ref_hsi_after.png';
+img_path2 = '/Volumes/School/Thesis/data/captures/registered/prophoto/cactus1_reg_hsi_before.png';
+% img_path1 = '/Volumes/School/Thesis/data/captures/registered/prophoto/yoda3_reg_kodak_halogen_before.png';
+% img_path2 = '/Volumes/School/Thesis/data/captures/registered/prophoto/yoda3_ref_hsi_kodak_halogen_before.png';
+% %
 save_folder = './results/deltaE';
 
 img1 = imread(img_path1);
 img2 = imread(img_path2);
+imshowpair(img1, img2);
 
 
 % Ensure images are in uint16 format
@@ -20,13 +25,13 @@ img1_norm = double(img1) / double(intmax('uint16'));
 img2_norm = double(img2) / double(intmax('uint16'));
 
 % Exposure normalization
-mean1 = mean(img1_norm(:));
-mean2 = mean(img2_norm(:));
+% mean1 = mean(img1_norm(:));
+% mean2 = mean(img2_norm(:));
 % img2_norm = img2_norm * (mean1 / mean2);
 
 % Convert RGB images to L*a*b* color space
-lab1 = rgb2lab(img1_norm, 'ColorSpace', 'prophoto-rgb');
-lab2 = rgb2lab(img2_norm, 'ColorSpace', 'prophoto-rgb');
+lab1 = rgb2lab(img1_norm, 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
+lab2 = rgb2lab(img2_norm, 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
 
 % Compute ΔE 2000 differences
 deltaE_vector = deltaE2000(reshape(lab1, [], 3), reshape(lab2, [], 3));
@@ -55,12 +60,21 @@ end
 % Display the ΔE 2000 difference as a heat map
 figure;
 imagesc(deltaE_map);
-clim([0 20]);
+clim([min(deltaE_map(:)) 10]);
 colorbar;
-title('ΔE 2000 Difference Heat Map');
+title('ΔE00 Difference Heat Map');
 axis image off;
+colormap jet;
 
 % Save figure
-[~, img_name, ~] = fileparts(img_path2);
+[~, img_name, ~] = fileparts(img_path1);
 % saveas(gcf, fullfile(save_folder, [img_name '_deltaE_norm.png']));
+%%
 
+deltaE_map_norm = mat2gray(deltaE_map);
+
+% Scale to 16-bit grayscale
+deltaE_uint16 = uint16(deltaE_map_norm * 65535);
+
+% Save
+% imwrite(deltaE_uint16, fullfile(save_folder, [img_name '_deltaE.png']));

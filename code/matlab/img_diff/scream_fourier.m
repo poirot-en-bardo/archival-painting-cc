@@ -46,7 +46,7 @@ scream_grey = rgb2gray(scream_rgb);
 % Normalise to double for FFT ([0, 1])
 scream_grey = double(scream_grey) / double(roof);
 %%
-img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/deltae.png';
+img_path = '/Volumes/School/Thesis/thesis-repo/code/matlab/img_diff/results/deltaE/yoda_reg_kodak_halogen_deltaE.png';
 scream_grey = imread(img_path);
 F = fft2(scream_grey);
 F_shifted = fftshift(F); % Shift zero frequency to center
@@ -69,7 +69,7 @@ magnitude_spectrum = mat2gray(log(abs(F_shifted)));
 [rows, cols] = size(F_shifted);
 
 % radius for low-frequency cutoff (in pixels)
-low_freq_radius = min(rows, cols) / 100;  
+low_freq_radius = min(rows, cols) / 20;  
 
 % grid of distance values from the center
 [X, Y] = meshgrid(1:cols, 1:rows);
@@ -104,7 +104,7 @@ high_freq_magnitude_norm = mat2gray(high_freq_magnitude);
 % imshow(high_freq_magnitude_norm);
 % title('High Frequencies');
 
-%%
+%
 % Apply inverse FFT to get the spatial domain images 
 low_freq_recovered = ifft2(ifftshift(low_freq));  % Inverse FFT 
 low_freq_recovered = abs(low_freq_recovered);    % Take the magnitude 
