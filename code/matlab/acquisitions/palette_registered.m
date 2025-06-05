@@ -83,6 +83,20 @@ cube2_final = cube2_reg(rowmin:rowmax, colmin:colmax, :);
 figure; imshowpair(mat2gray(cube1_final(:,:,bandToShow)), mat2gray(cube2_final(:,:,bandToShow)));
 title('After Automatic Registration');
 
+
+
+%% using already-registered cubes 
+
+hcube1= hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
+hcube1 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_after1.hdr');
+
+cube1_final = hcube1.DataCube;
+cube2_final = hcube2.DataCube;
+wl1 = hcube1.Wavelength;
+
+
 %% palette extraction
 % Divide into blocks
 [H, W, B] = size(cube1_final);
@@ -165,117 +179,113 @@ end
 figure; imshow(img1); title('Palette from Cube 1 (Before)');
 figure; imshow(img2); title('Palette from Cube 2 (After)');
 
-%% k means
-% After registration and masking to valid overlap:
-% cube1_final, cube2_final: [H x W x B]
-pixels1 = reshape(cube1_final, [], size(cube1_final,3)); % [N x B]
-pixels2 = reshape(cube2_final, [], size(cube2_final,3)); % [N x B]
-valid = all(~isnan(pixels1),2) & all(~isnan(pixels2),2); % Only fully valid pixels
-pixels1 = pixels1(valid, :);
-pixels2 = pixels2(valid, :);
+
+
+%% K means only on non-specular pixels
+
+mask1 = ~all(cube1_final > 0.99, 3);
+mask2 = ~all(cube2_final > 0.99, 3);
+
+%  Make intersection mask of valid pixels
+min_h = min(size(cube1_final,1), size(cube1_final,1));
+min_w = min(size(cube2_final,2), size(cube2_final,2));
+cube1_final = cube1_final(1:min_h,1:min_w,:);
+cube2_final = cube2_final(1:min_h,1:min_w,:);
+mask1 = mask1(1:min_h,1:min_w);
+mask2 = mask2(1:min_h,1:min_w);
+
+mask = mask1 & mask2; % Intersection
+
+% extracting pixels
+pixels1 = reshape(cube1_final, [], size(cube1_final,3));
+pixels2 = reshape(cube2_final, [], size(cube2_final,3));
+mask_flat = mask(:);
+pixels1_masked = pixels1(mask_flat, :);
+pixels2_masked = pixels2(mask_flat, :);
+
 
 nColors = 60;
-[cluster_idx, ~] = kmeans(pixels1, nColors, 'Replicates', 5, 'MaxIter', 1000);
+[cluster_idx, ~] = kmeans(pixels1_masked, nColors, 'Replicates', 5, 'MaxIter', 1000);
 
-meanSpectra1 = zeros(nColors, size(pixels1,2));
+meanSpectra1 = zeros(nColors, size(pixels1_masked,2));
 meanSpectra2 = zeros(nColors, size(pixels2,2));
 for k = 1:nColors
-    meanSpectra1(k,:) = mean(pixels1(cluster_idx==k,:), 1, 'omitnan');
-    meanSpectra2(k,:) = mean(pixels2(cluster_idx==k,:), 1, 'omitnan');
+    meanSpectra1(k,:) = mean(pixels1_masked(cluster_idx==k,:), 1, 'omitnan');
+    meanSpectra2(k,:) = mean(pixels2_masked(cluster_idx==k,:), 1, 'omitnan');
 end
 
 %% Step 7: Save
-save('palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
-save('palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
+save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
+save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
 
 %%
 
-cmf = importdata('../../../data/CIE2degCMFs_1931.txt');  % or use your path
+
+% Load CIE and D65 data
+cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
 ill = importdata('../../../data/CIE_D65.txt');
-cmf_wl = cmf(:,1);
-cmf_xyz = cmf(:,2:4);
-ill_wl = ill(:,1);
-ill_val = ill(:,2);
+cmf_interp = interp1(cmf(:,1), cmf(:,2:4), wl1, 'linear', 'extrap');
+ill_interp = interp1(ill(:,1), ill(:,2), wl1, 'linear', 'extrap')';
 
 nColors = size(meanSpectra1, 1);
 
-% Interpolate illuminant and cmfs to match your wavelengths
-ill_interp = interp1(ill_wl, ill_val, wl1, 'linear', 'extrap');
-cmf_interp = interp1(cmf_wl, cmf_xyz, wl1, 'linear', 'extrap');
+% Find white point (Y=100 for Lab conversion)
+white_refl = ones(1, numel(wl1));
+white_xyz = (white_refl .* ill_interp) * cmf_interp;
+white_xyz = white_xyz / sum(ill_interp .* cmf_interp(:,2)');
 
-% Function to convert spectra to xyz then to rgb
-spectra2rgb = @(refl) xyz2rgb((refl .* ill_interp') * cmf_interp ./ sum(ill_interp' .* cmf_interp(:,2)), 'ColorSpace','srgb');
+% Compute XYZ for both
+XYZs1 = (meanSpectra1 .* ill_interp) * cmf_interp;
+XYZs2 = (meanSpectra2 .* ill_interp) * cmf_interp;
+XYZs1 = XYZs1 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+XYZs2 = XYZs2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
 
-% Convert each mean spectrum to RGB
-RGBs1 = zeros(nColors, 3);
-RGBs2 = zeros(nColors, 3);
-for k = 1:nColors
-    refl = meanSpectra1(k,:); % 1 x N
-    weighted = refl .* ill_interp(:)'; % 1 x N
-    xyz1 = weighted * cmf_interp; % 1 x 3
-    xyz1 = xyz1 / sum(ill_interp(:)' .* cmf_interp(:,2)');
-    xyz1 = max(0, xyz1);
-    RGBs1(k,:) = xyz2rgb(xyz1, 'ColorSpace','srgb');
+% Scale for Lab conversion
+XYZs1_scaled = XYZs1 * (100 / white_xyz(2));
+XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
 
-    refl = meanSpectra2(k,:);
-    weighted = refl .* ill_interp(:)';
-    xyz2 = weighted * cmf_interp;
-    xyz2 = xyz2 / sum(ill_interp(:)' .* cmf_interp(:,2)');
-    xyz2 = max(0, xyz2);
-    RGBs2(k,:) = xyz2rgb(xyz2, 'ColorSpace','srgb');
-end
+Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
+Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
 
+% sRGB conversion for display
+RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','srgb')));
+RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','srgb')));
 
-% Clamp RGBs to [0 1]
-RGBs1 = max(0, min(1, RGBs1));
-RGBs2 = max(0, min(1, RGBs2));
-
-% --- (2) Make a grid image for each palette
-
-
-nColors = 60;
-grid_w = 10;
-grid_h = 6;
+% Palette grid display
 patchSize = 40;
-
-% --- img1 and img2 initialised as white ---
-img1 = ones(grid_h * patchSize, grid_w * patchSize, 3); % Cube 1
-img2 = ones(grid_h * patchSize, grid_w * patchSize, 3); % Cube 2 (matched!)
+grid_w = 10; % columns
+grid_h = nColors/grid_w;
+img1 = ones(grid_h * patchSize, grid_w * patchSize, 3);
+img2 = ones(grid_h * patchSize, grid_w * patchSize, 3);
 
 for k = 1:nColors
     row = floor((k-1)/grid_w);
     col = mod((k-1), grid_w);
     r_idx = (row*patchSize+1):((row+1)*patchSize);
     c_idx = (col*patchSize+1):((col+1)*patchSize);
-    patch_rgb1 = repmat(reshape(RGBs1(k,:), 1, 1, 3), patchSize, patchSize, 1);
-    patch_rgb2 = repmat(reshape(RGBs2(k,:), 1, 1, 3), patchSize, patchSize, 1);
-    img1(r_idx, c_idx, :) = patch_rgb1;               % before
-    img2(r_idx, c_idx, :) = patch_rgb2;               % after (matched!)
+    img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
+    img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
 end
-
-
-
-
+%
+figure; imshow(img1); title('Palette (Before)');
+%
+figure; imshow(img2); title('Palette (After)');
 %%
-figure; imshow(img1); title('Palette Yoda (Before)');
-figure; imshow(img2); title('Palette Yoda (After)');
-
-
-%%
-% After you have Lab1 and Lab2 as [numBlocks x 3] or [nColors x 3] arrays
+% Delta E grid
 dE = deltaE2000(Lab1, Lab2);
-
-% Put dE into a grid
 dE_grid = reshape(dE, grid_h, grid_w);
-figure; imagesc(dE_grid);
+figure;
+imagesc(dE_grid);
 axis image off;
 colormap(jet(255)); colorbar; clim([0 10]);
 title('\DeltaE_{00} between palette patches');
 for k = 1:numel(dE)
     [row, col] = ind2sub([grid_h, grid_w], k);
     text(col, row, sprintf('%.1f', dE(k)), ...
-        'HorizontalAlignment','center','Color','w','FontSize',10,'FontWeight','bold');
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',10, 'FontWeight','bold');
 end
+
+
 
 
 %%
@@ -326,3 +336,5 @@ function write_envi_hdr(hdrfile, hdr)
     end
     fclose(fid);
 end
+
+%%

@@ -1,6 +1,8 @@
 clear; close all;
-cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
-cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
+% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
+% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
+cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
+cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
 
 hcube1 = hypercube(cubeFile1); cube1 = hcube1.DataCube; wl1 = hcube1.Wavelength;
 hcube2 = hypercube(cubeFile2); cube2 = hcube2.DataCube; wl2 = hcube2.Wavelength;
@@ -9,7 +11,7 @@ cube1 = cube1(:,:,valid_idx1); wl1 = wl1(valid_idx1);
 valid_idx2 = find(wl2 >= 380 & wl2 <= 780);
 cube2 = cube2(:,:,valid_idx2); wl2 = wl2(valid_idx2);
 
-
+%%
 % Crop 
 figure; imagesc(cube1(:,:,10)); axis image; colormap gray; title('Crop FILM');
 roi1 = drawrectangle; r1 = round(roi1.Position);
@@ -31,7 +33,7 @@ cube2_sub = imresize3(cube2_crop, sz);
 
 %% registration
 
-bandToShow = 50; 
+bandToShow = 85; 
 
 I1 = mat2gray(cube1_sub(:,:,bandToShow)); % Reference (before)
 I2 = mat2gray(cube2_sub(:,:,bandToShow)); % To register (after)
@@ -45,7 +47,7 @@ points2 = detectSURFFeatures(I2);
 [features2, valid_points2] = extractFeatures(I2, points2);
 
 % --- Match features
-indexPairs = matchFeatures(features1, features2, 'MaxRatio', 0.6, 'Unique', true);
+indexPairs = matchFeatures(features1, features2, 'MaxRatio', 0.5, 'Unique', true);
 matchedPoints1 = valid_points1(indexPairs(:,1));
 matchedPoints2 = valid_points2(indexPairs(:,2));
 
@@ -81,6 +83,17 @@ cube2_final = cube2_reg(rowmin:rowmax, colmin:colmax, :);
 figure; imshowpair(mat2gray(cube1_final(:,:,bandToShow)), mat2gray(cube2_final(:,:,bandToShow)));
 title('After Automatic Registration');
 
+
+
+%% using already-registered cubes 
+
+hcube1= hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
+cube1_final = hcube1.DataCube;
+cube2_final2 = hcube2.DataCube;
+wl1 = hcube1.Wavelength;
+
+
 %% palette extraction
 % Divide into blocks
 [H, W, B] = size(cube1_final);
@@ -107,31 +120,7 @@ for i = 1:n_blocks_y
 end
 
 
-%% k means
-% After registration and masking to valid overlap:
-% cube1_final, cube2_final: [H x W x B]
-pixels1 = reshape(cube1_final, [], size(cube1_final,3)); % [N x B]
-pixels2 = reshape(cube2_final, [], size(cube2_final,3)); % [N x B]
-valid = all(~isnan(pixels1),2) & all(~isnan(pixels2),2); % Only fully valid pixels
-pixels1 = pixels1(valid, :);
-pixels2 = pixels2(valid, :);
-
-nColors = 60;
-[cluster_idx, ~] = kmeans(pixels1, nColors, 'Replicates', 5, 'MaxIter', 1000);
-
-meanSpectra1 = zeros(nColors, size(pixels1,2));
-meanSpectra2 = zeros(nColors, size(pixels2,2));
-for k = 1:nColors
-    meanSpectra1(k,:) = mean(pixels1(cluster_idx==k,:), 1, 'omitnan');
-    meanSpectra2(k,:) = mean(pixels2(cluster_idx==k,:), 1, 'omitnan');
-end
-
-%% Step 7: Save
-save('palette_cactus_before.mat', 'meanSpectra1', 'wl1');
-save('palette_cactus_after.mat', 'meanSpectra2', 'wl2');
-
 %%
-
 % Paths to CMF and D65 files
 cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
 ill = importdata('../../../data/CIE_D65.txt');
@@ -183,64 +172,165 @@ for k = 1:nColors
 end
 
 
-
-%%
+%
 figure; imshow(img1); title('Palette from Cube 1 (Before)');
 figure; imshow(img2); title('Palette from Cube 2 (After)');
 
 
-%%
-% After you have Lab1 and Lab2 as [numBlocks x 3] or [nColors x 3] arrays
-dE = deltaE2000(Lab1, Lab2);
 
-% Put dE into a grid
+%% K means only on non-specular pixels
+
+mask1 = ~all(cube1_final > 0.99, 3);
+mask2 = ~all(cube2_final > 0.99, 3);
+
+%  Make intersection mask of valid pixels
+min_h = min(size(cube1_final,1), size(cube1_final,1));
+min_w = min(size(cube2_final,2), size(cube2_final,2));
+cube1_final = cube1_final(1:min_h,1:min_w,:);
+cube2_final = cube2_final(1:min_h,1:min_w,:);
+mask1 = mask1(1:min_h,1:min_w);
+mask2 = mask2(1:min_h,1:min_w);
+
+mask = mask1 & mask2; % Intersection
+
+% extracting pixels
+pixels1 = reshape(cube1_final, [], size(cube1_final,3));
+pixels2 = reshape(cube2_final, [], size(cube2_final,3));
+mask_flat = mask(:);
+pixels1_masked = pixels1(mask_flat, :);
+pixels2_masked = pixels2(mask_flat, :);
+
+
+nColors = 60;
+[cluster_idx, ~] = kmeans(pixels1_masked, nColors, 'Replicates', 5, 'MaxIter', 1000);
+
+meanSpectra1 = zeros(nColors, size(pixels1_masked,2));
+meanSpectra2 = zeros(nColors, size(pixels2,2));
+for k = 1:nColors
+    meanSpectra1(k,:) = mean(pixels1_masked(cluster_idx==k,:), 1, 'omitnan');
+    meanSpectra2(k,:) = mean(pixels2_masked(cluster_idx==k,:), 1, 'omitnan');
+end
+
+%% Step 7: Save
+save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
+save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
+
+%%
+
+
+% Load CIE and D65 data
+cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
+ill = importdata('../../../data/CIE_D65.txt');
+cmf_interp = interp1(cmf(:,1), cmf(:,2:4), wl1, 'linear', 'extrap');
+ill_interp = interp1(ill(:,1), ill(:,2), wl1, 'linear', 'extrap')';
+
+nColors = size(meanSpectra1, 1);
+
+% Find white point (Y=100 for Lab conversion)
+white_refl = ones(1, numel(wl1));
+white_xyz = (white_refl .* ill_interp) * cmf_interp;
+white_xyz = white_xyz / sum(ill_interp .* cmf_interp(:,2)');
+
+% Compute XYZ for both
+XYZs1 = (meanSpectra1 .* ill_interp) * cmf_interp;
+XYZs2 = (meanSpectra2 .* ill_interp) * cmf_interp;
+XYZs1 = XYZs1 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+XYZs2 = XYZs2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+
+% Scale for Lab conversion
+XYZs1_scaled = XYZs1 * (100 / white_xyz(2));
+XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
+
+Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
+Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
+
+% sRGB conversion for display
+RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','srgb')));
+RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','srgb')));
+
+% Palette grid display
+patchSize = 40;
+grid_w = 10; % columns
+grid_h = nColors/grid_w;
+img1 = ones(grid_h * patchSize, grid_w * patchSize, 3);
+img2 = ones(grid_h * patchSize, grid_w * patchSize, 3);
+
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    r_idx = (row*patchSize+1):((row+1)*patchSize);
+    c_idx = (col*patchSize+1):((col+1)*patchSize);
+    img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
+    img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
+end
+
+figure; imshow(img1); title('Palette (Before)');
+figure; imshow(img2); title('Palette (After)');
+
+% Delta E grid
+dE = deltaE2000(Lab1, Lab2);
 dE_grid = reshape(dE, grid_h, grid_w);
-figure; imagesc(dE_grid);
+figure;
+imagesc(dE_grid);
 axis image off;
 colormap(jet(255)); colorbar; clim([0 10]);
 title('\DeltaE_{00} between palette patches');
 for k = 1:numel(dE)
     [row, col] = ind2sub([grid_h, grid_w], k);
     text(col, row, sprintf('%.1f', dE(k)), ...
-        'HorizontalAlignment','center','Color','w','FontSize',10,'FontWeight','bold');
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',10, 'FontWeight','bold');
 end
 
 
-%%
-% Choose your folder and filenames
-outFolder = '/home/oem/eliza/data/processed/registered/';
-basename1 = 'cactus_registered_before';
-basename2 = 'cactus_registered_after';
 
-% File paths
+
+%%
+%saving registered cubes
+outFolder = '/home/oem/eliza/data/processed/reflectance/registered';
+basename1 = 'yoda_reg_before1';
+basename2 = 'yoda_reg_after1';
+
 datFile1 = fullfile(outFolder, [basename1 '.dat']);
 hdrFile1 = fullfile(outFolder, [basename1 '.hdr']);
 datFile2 = fullfile(outFolder, [basename2 '.dat']);
 hdrFile2 = fullfile(outFolder, [basename2 '.hdr']);
 
+% Save the cubes as .dat (BIL)
+multibandwrite(single(cube1_final), datFile1, 'bil');
+multibandwrite(single(cube2_final), datFile2, 'bil');
 
-% Save cube1_final
-multibandwrite(single(cube1_final), datFile1, ...
-    'interleave', 'bil');
-
-% Save cube2_final
-multibandwrite(single(cube2_final), datFile2, ...
-    'interleave', 'bil');
+% Prepare header info
 [rows, cols, bands] = size(cube1_final);
+hdr.samples = cols;
+hdr.lines = rows;
+hdr.bands = bands;
+hdr.header_offset = 0;
+hdr.data_type = 4;        % 4 = single (float)
+hdr.interleave = 'bil';
+hdr.byte_order = 0;       % 0 = little-endian
+hdr.wavelength = wl1(:)'; % Or wl2(:)' for cube2
 
-% Make header struct for cube1_final
-hdr1.samples = cols;
-hdr1.lines = rows;
-hdr1.bands = bands;
-hdr1.header_offset = 0;
-hdr1.file_type = 'ENVI Standard';
-hdr1.data_type = 4;  % 4 = single precision (float)
-hdr1.interleave = 'bil';
-hdr1.wavelength = wl1(:)';  % ENVI wants row vector
+write_envi_hdr(hdrFile1, hdr);
+write_envi_hdr(hdrFile2, hdr);
 
-% Make header struct for cube2_final (should have same shape as cube1_final!)
-hdr2 = hdr1;
 
-% Save headers
-envihdrwrite(hdr1, hdrFile1);
-envihdrwrite(hdr2, hdrFile2);
+function write_envi_hdr(hdrfile, hdr)
+    fid = fopen(hdrfile, 'w');
+    fprintf(fid, 'ENVI\n');
+    fprintf(fid, 'samples = %d\n', hdr.samples);
+    fprintf(fid, 'lines   = %d\n', hdr.lines);
+    fprintf(fid, 'bands   = %d\n', hdr.bands);
+    fprintf(fid, 'header offset = %d\n', hdr.header_offset);
+    fprintf(fid, 'file type = {ENVI Standard}\n');
+    fprintf(fid, 'data type = %d\n', hdr.data_type);
+    fprintf(fid, 'byte order = %d\n', hdr.byte_order); 
+    fprintf(fid, 'interleave = %s\n', hdr.interleave);
+    if isfield(hdr, 'wavelength')
+        fprintf(fid, 'wavelength = { ');
+        fprintf(fid, '%g, ', hdr.wavelength(1:end-1));
+        fprintf(fid, '%g }\n', hdr.wavelength(end));
+    end
+    fclose(fid);
+end
+
+%%
