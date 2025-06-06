@@ -27,7 +27,7 @@ function saveProPhotoTIFF(rgbImg, outFile)
     tag.BitsPerSample       = 16;
     tag.SamplesPerPixel     = 3;
     tag.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-    tag.Compression         = Tiff.Compression.LZW;         
+    tag.Compression         = Tiff.Compression.Deflate;         
     tag.RowsPerStrip        = min(512, size(img16,1));      % helps compression
     tag.ICCProfile          = iccData(:)';   % must be row uint8 array
 

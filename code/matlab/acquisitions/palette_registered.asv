@@ -89,8 +89,11 @@ title('After Automatic Registration');
 
 hcube1= hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr');
 hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
+hcube1 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_after1.hdr');
+
 cube1_final = hcube1.DataCube;
-cube2_final2 = hcube2.DataCube;
+cube2_final = hcube2.DataCube;
 wl1 = hcube1.Wavelength;
 
 
@@ -180,8 +183,8 @@ figure; imshow(img2); title('Palette from Cube 2 (After)');
 
 %% K means only on non-specular pixels
 
-mask1 = ~all(cube1_final > 0.99, 3);
-mask2 = ~all(cube2_final > 0.99, 3);
+mask1 = ~all(cube1_final > 0.98, 3);
+mask2 = ~all(cube2_final > 0.98, 3);
 
 %  Make intersection mask of valid pixels
 min_h = min(size(cube1_final,1), size(cube1_final,1));
@@ -211,9 +214,8 @@ for k = 1:nColors
     meanSpectra2(k,:) = mean(pixels2_masked(cluster_idx==k,:), 1, 'omitnan');
 end
 
-%% Step 7: Save
-save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
-save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
+
+
 
 %%
 
@@ -245,9 +247,47 @@ Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
 Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
 
 % sRGB conversion for display
-RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','srgb')));
-RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','srgb')));
+RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d65')));
+RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d65')));
 
+
+% Compute chroma from Lab2 (use after, but you can use before if you prefer)
+Chroma = sqrt(Lab1(:,2).^2 + Lab1(:,3).^2);
+achromaticThresh = 35;   % You may need to tweak this (e.g. 3~8)
+isAchromatic = Chroma < achromaticThresh;
+
+achromaticIdx = find(isAchromatic);
+chromaticIdx = find(~isAchromatic);
+
+% Cluster only chromatic (colored) patches
+nGroups = 3;
+if ~isempty(chromaticIdx)
+    [grp, C] = kmeans(Lab2(chromaticIdx,2:3), nGroups, 'Replicates', 5);
+else
+    grp = [];
+end
+
+% Order: (1) all achromatics, sorted by lightness, (2) then colored by group/lightness
+finalOrder = [];
+
+% 1. Achromatics, by lightness
+[~, achroOrd] = sort(Lab1(achromaticIdx,1), 'descend');
+finalOrder = [finalOrder; achromaticIdx(achroOrd)];
+
+% 2. Each chromatic group, by lightness
+for g = 1:nGroups
+    idx = chromaticIdx(grp==g);   % indices in original array
+    [~, ord] = sort(Lab1(idx,1), 'descend');
+    finalOrder = [finalOrder; idx(ord)];
+end
+
+
+% Reorder everything
+Lab1 = Lab1(finalOrder,:);
+Lab2 = Lab2(finalOrder,:);
+RGBs1 = RGBs1(finalOrder,:);
+RGBs2 = RGBs2(finalOrder,:);
+%
 % Palette grid display
 patchSize = 40;
 grid_w = 10; % columns
@@ -263,27 +303,44 @@ for k = 1:nColors
     img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
     img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
 end
+%%
+figure; imshow(img1); title('Palette Yoda (Before)');
+%%
+figure; imshow(img2); title('Palette Yoda (After)');
 
-figure; imshow(img1); title('Palette (Before)');
-figure; imshow(img2); title('Palette (After)');
 
+%%
 % Delta E grid
+% Delta E grid (keep this as row-wise, as palette)
 dE = deltaE2000(Lab1, Lab2);
-dE_grid = reshape(dE, grid_h, grid_w);
+dE_grid = zeros(grid_h, grid_w);
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    dE_grid(row, col) = dE(k);
+end
+
 figure;
 imagesc(dE_grid);
 axis image off;
-colormap(jet(255)); colorbar; clim([0 10]);
+colormap(jet(255));
+colorbar;
+clim([0 10]);
 title('\DeltaE_{00} between palette patches');
-for k = 1:numel(dE)
-    [row, col] = ind2sub([grid_h, grid_w], k);
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
     text(col, row, sprintf('%.1f', dE(k)), ...
         'HorizontalAlignment','center', 'Color','w', 'FontSize',10, 'FontWeight','bold');
 end
 
 
 
-
+%% Save
+meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
+meanSpectra2 = meanSpectra2(finalOrder, :);
+save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
+save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
 %%
 %saving registered cubes
 outFolder = '/home/oem/eliza/data/processed/reflectance/registered';
@@ -334,3 +391,77 @@ function write_envi_hdr(hdrfile, hdr)
 end
 
 %%
+% Display indices on palette (Before)
+figure; imshow(img1); title('Palette (Before)');
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 14, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+%%
+% Display indices on palette (After)
+figure; imshow(img2); title('Palette (After)');
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 14, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+
+%%
+% Overlay numbers in the same order as palette
+figure; imagesc(dE_grid);
+axis image off; colormap(jet(255)); colorbar; clim([0 10]);
+title('\DeltaE_{00} between palette patches');
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    text(col, row, num2str(k), ...
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',14, 'FontWeight','bold');
+end
+
+
+%%
+% --- Palette grid display with diagonal split: before (upper left), after (lower right) ---
+
+patchSize = 40;
+grid_w = 10;
+grid_h = nColors / grid_w;
+img_diag = ones(grid_h * patchSize, grid_w * patchSize, 3);
+
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    r_idx = (row*patchSize+1):((row+1)*patchSize);
+    c_idx = (col*patchSize+1):((col+1)*patchSize);
+    
+    patch_before = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
+    patch_after  = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
+    
+    % Create diagonal mask: upper left (before), lower right (after)
+    [X, Y] = meshgrid(1:patchSize, 1:patchSize);
+    diag_mask = Y < X;      % Lower triangle: after, Upper triangle (including diagonal): before
+
+    patch = patch_before;   % Start with 'before'
+    for c = 1:3
+        temp = patch(:,:,c);
+        temp2 = patch_after(:,:,c);   % Store patch_after channel in a temp variable
+        temp(diag_mask) = temp2(diag_mask);
+        patch(:,:,c) = temp;
+    end
+    
+    img_diag(r_idx, c_idx, :) = patch;
+end
+
+figure;
+imshow(img_diag);
+title('Palette: Before/After');
