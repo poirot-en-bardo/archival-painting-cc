@@ -1,0 +1,76 @@
+hcube1= hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
+hcube1 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_before1.hdr');
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_after1.hdr');
+
+cube1_final = hcube1.DataCube;
+cube2_final = hcube2.DataCube;
+wl1 = hcube1.Wavelength;
+
+cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
+ill = importdata('../../../data/CIE_D50.txt');
+cmf_wl = cmf(:,1);
+cmf_xyz = cmf(:,2:4);
+ill_wl = ill(:,1);
+ill_val = ill(:,2);
+% Interpolate illuminant and CMFs to your wavelengths
+ill_interp = interp1(ill_wl, ill_val, wl1, 'linear', 'extrap');
+cmf_interp = interp1(cmf_wl, cmf_xyz, wl1, 'linear', 'extrap');
+ill_interp = ill_interp(:)';    % [1, numBands]
+cmf_interp = reshape(cmf_interp, [], 3); % [numBands x 3]
+
+white_refl = ones(1, numel(wl1));
+white_xyz = (white_refl .* ill_interp) * cmf_interp;
+scaling_factor = sum(ill_interp .* cmf_interp(:,2)'); 
+white_xyz = white_xyz / scaling_factor;
+
+[H, W, B] = size(cube1_final);
+
+% Reshape cubes for vectorized conversion: [numPixels, bands]
+cube1_2D = reshape(cube1_final, [], B);
+cube2_2D = reshape(cube2_final, [], B);
+
+% Mask out invalid/saturated/empty pixels (if needed)
+mask1 = ~all(cube1_2D > 0.98, 2);
+mask2 = ~all(cube2_2D > 0.98, 2);
+valid_mask = mask1 & mask2;
+
+% Prepare output
+deltaE_map = nan(H*W,1);
+
+if any(valid_mask)
+    refl1 = cube1_2D(valid_mask, :);
+    refl2 = cube2_2D(valid_mask, :);
+
+    % Spectra to XYZ
+    XYZ1 = (refl1 .* ill_interp) * cmf_interp;
+    XYZ2 = (refl2 .* ill_interp) * cmf_interp;
+    XYZ1 = XYZ1 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+    XYZ2 = XYZ2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+    XYZ1_scaled = XYZ1 * (100 / white_xyz(2));
+    XYZ2_scaled = XYZ2 * (100 / white_xyz(2));
+
+
+    % XYZ to Lab
+    Lab1 = xyz2lab(XYZ1_scaled, 'WhitePoint', 'd50');
+    Lab2 = xyz2lab(XYZ2_scaled, 'WhitePoint', 'd50');
+
+    % Delta E 2000
+    deltaE_vec = deltaE2000(Lab1, Lab2);
+
+    % Insert into full map
+    deltaE_map(valid_mask) = deltaE_vec;
+end
+
+% Reshape to 2D
+deltaE_map_img = reshape(deltaE_map, H, W);
+
+% Display
+figure; imagesc(deltaE_map_img); axis image off;
+colormap(jet(256)); colorbar; clim([0 10]);
+title('\DeltaE_{00} (pixel-wise, full painting)');
+
+% Optional: save as uint16
+deltaE_norm = mat2gray(deltaE_map_img); % [0,1]
+deltaE_uint16 = uint16(deltaE_norm * 65535);
+% imwrite(deltaE_uint16, 'deltaE_map_full.png');

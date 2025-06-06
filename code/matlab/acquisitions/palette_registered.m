@@ -24,9 +24,9 @@ roi2 = drawrectangle; r2 = round(roi2.Position);
 x2a = max(1, r2(1)); y2a = max(1, r2(2));
 x2b = min(size(cube2,2), x2a + r2(3) - 1); y2b = min(size(cube2,1), y2a + r2(4) - 1);
 cube2_crop = cube2(y2a:y2b, x2a:x2b, :);
-
+%%
 % Subsample both to same size
-scale = 0.2; % or whatever you want
+scale = 0.5; % or whatever you want
 sz = [round(size(cube1_crop,1)*scale), round(size(cube1_crop,2)*scale), size(cube1_crop,3)];
 cube1_sub = imresize3(cube1_crop, sz);
 cube2_sub = imresize3(cube2_crop, sz);

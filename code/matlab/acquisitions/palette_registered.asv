@@ -24,9 +24,9 @@ roi2 = drawrectangle; r2 = round(roi2.Position);
 x2a = max(1, r2(1)); y2a = max(1, r2(2));
 x2b = min(size(cube2,2), x2a + r2(3) - 1); y2b = min(size(cube2,1), y2a + r2(4) - 1);
 cube2_crop = cube2(y2a:y2b, x2a:x2b, :);
-
+%%
 % Subsample both to same size
-scale = 0.2; % or whatever you want
+scale = 0.5; % or whatever you want
 sz = [round(size(cube1_crop,1)*scale), round(size(cube1_crop,2)*scale), size(cube1_crop,3)];
 cube1_sub = imresize3(cube1_crop, sz);
 cube2_sub = imresize3(cube2_crop, sz);
@@ -252,8 +252,8 @@ RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','
 
 
 % Compute chroma from Lab2 (use after, but you can use before if you prefer)
-Chroma = sqrt(Lab2(:,2).^2 + Lab2(:,3).^2);
-achromaticThresh = ;   % adjust
+Chroma = sqrt(Lab1(:,2).^2 + Lab1(:,3).^2);
+achromaticThresh = 78;   % adjust
 isAchromatic = Chroma < achromaticThresh;
 
 achromaticIdx = find(isAchromatic);
@@ -262,7 +262,7 @@ chromaticIdx = find(~isAchromatic);
 % Cluster only chromatic (colored) patches
 nGroups = 3;
 if ~isempty(chromaticIdx)
-    [grp, C] = kmeans(Lab2(chromaticIdx,2:3), nGroups, 'Replicates', 7);
+    [grp, C] = kmeans(Lab1(chromaticIdx,2:3), nGroups, 'Replicates', 10);
 else
     grp = [];
 end
@@ -277,7 +277,7 @@ finalOrder = [finalOrder; achromaticIdx(achroOrd)];
 % 2. Each chromatic group, by lightness
 for g = 1:nGroups
     idx = chromaticIdx(grp==g);   % indices in original array
-    [~, ord] = sort(Lab1(idx,1), 'descend');
+    [~, ord] = sort(Lab2(idx,1), 'descend');
     finalOrder = [finalOrder; idx(ord)];
 end
 
@@ -340,8 +340,8 @@ saveas(gcf, '/home/oem/eliza/mac-shared/deltaE_grid_cactus.png');
 %% Save
 meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
 meanSpectra2 = meanSpectra2(finalOrder, :);
-save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
-save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
+save('palette/palette_cactus_before1.mat', 'meanSpectra1', 'wl1');
+save('palette/palette_cactus_after1.mat', 'meanSpectra2', 'wl2');
 %%
 %saving registered cubes
 outFolder = '/home/oem/eliza/data/processed/reflectance/registered';
@@ -480,3 +480,26 @@ saveProPhotoTIFF(img1_uint16, fullfile(saveFolder, 'cactus_palette_before.tif'))
 saveProPhotoTIFF(img2_uint16, fullfile(saveFolder, 'cactus_palette_after.tif'));
 saveProPhotoTIFF(img_diag_uint16, fullfile(saveFolder, 'cactus_palette_diag.tif'));
 
+%%
+figure; imshow(img1); title('Palette Yoda (Before)');
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 14, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+
+figure;
+imagesc(dE_grid);
+axis image off; colormap(jet(255)); colorbar; clim([0 10]);
+title('\DeltaE_{00} between palette patches');
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    text(col, row, num2str(k), ...
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',14, 'FontWeight','bold');
+end
