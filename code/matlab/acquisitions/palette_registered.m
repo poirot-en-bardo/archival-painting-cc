@@ -1,8 +1,8 @@
 clear; close all;
-% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
-% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
-cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
-cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
+cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
+cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
+% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
+% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
 
 hcube1 = hypercube(cubeFile1); cube1 = hcube1.DataCube; wl1 = hcube1.Wavelength;
 hcube2 = hypercube(cubeFile2); cube2 = hcube2.DataCube; wl2 = hcube2.Wavelength;
@@ -13,13 +13,13 @@ cube2 = cube2(:,:,valid_idx2); wl2 = wl2(valid_idx2);
 
 %%
 % Crop 
-figure; imagesc(cube1(:,:,10)); axis image; colormap gray; title('Crop FILM');
+figure; imagesc(cube1(:,:,80)); axis image; colormap gray; title('Crop FILM');
 roi1 = drawrectangle; r1 = round(roi1.Position);
 x1a = max(1, r1(1)); y1a = max(1, r1(2));
 x1b = min(size(cube1,2), x1a + r1(3) - 1); y1b = min(size(cube1,1), y1a + r1(4) - 1);
 cube1_crop = cube1(y1a:y1b, x1a:x1b, :);
 
-figure; imagesc(cube2(:,:,10)); axis image; colormap gray; title('Crop PAINTING');
+figure; imagesc(cube2(:,:,80)); axis image; colormap gray; title('Crop PAINTING');
 roi2 = drawrectangle; r2 = round(roi2.Position);
 x2a = max(1, r2(1)); y2a = max(1, r2(2));
 x2b = min(size(cube2,2), x2a + r2(3) - 1); y2b = min(size(cube2,1), y2a + r2(4) - 1);
@@ -47,7 +47,7 @@ points2 = detectSURFFeatures(I2);
 [features2, valid_points2] = extractFeatures(I2, points2);
 
 % --- Match features
-indexPairs = matchFeatures(features1, features2, 'MaxRatio', 0.5, 'Unique', true);
+indexPairs = matchFeatures(features1, features2, 'MaxRatio', 0.3, 'Unique', true);
 matchedPoints1 = valid_points1(indexPairs(:,1));
 matchedPoints2 = valid_points2(indexPairs(:,2));
 
@@ -253,7 +253,7 @@ RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','
 
 % Compute chroma from Lab2 (use after, but you can use before if you prefer)
 Chroma = sqrt(Lab1(:,2).^2 + Lab1(:,3).^2);
-achromaticThresh = 35;   % You may need to tweak this (e.g. 3~8)
+achromaticThresh = 78;   % adjust
 isAchromatic = Chroma < achromaticThresh;
 
 achromaticIdx = find(isAchromatic);
@@ -262,7 +262,7 @@ chromaticIdx = find(~isAchromatic);
 % Cluster only chromatic (colored) patches
 nGroups = 3;
 if ~isempty(chromaticIdx)
-    [grp, C] = kmeans(Lab2(chromaticIdx,2:3), nGroups, 'Replicates', 5);
+    [grp, C] = kmeans(Lab1(chromaticIdx,2:3), nGroups, 'Replicates', 10);
 else
     grp = [];
 end
@@ -277,7 +277,7 @@ finalOrder = [finalOrder; achromaticIdx(achroOrd)];
 % 2. Each chromatic group, by lightness
 for g = 1:nGroups
     idx = chromaticIdx(grp==g);   % indices in original array
-    [~, ord] = sort(Lab1(idx,1), 'descend');
+    [~, ord] = sort(Lab2(idx,1), 'descend');
     finalOrder = [finalOrder; idx(ord)];
 end
 
@@ -303,9 +303,9 @@ for k = 1:nColors
     img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
     img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
 end
-%%
+%
 figure; imshow(img1); title('Palette Yoda (Before)');
-%%
+%
 figure; imshow(img2); title('Palette Yoda (After)');
 
 
@@ -334,18 +334,19 @@ for k = 1:nColors
         'HorizontalAlignment','center', 'Color','w', 'FontSize',10, 'FontWeight','bold');
 end
 
+saveas(gcf, '/home/oem/eliza/mac-shared/deltaE_grid_cactus.png'); 
 
 
 %% Save
 meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
 meanSpectra2 = meanSpectra2(finalOrder, :);
-save('palette/palette_yoda_before1.mat', 'meanSpectra1', 'wl1');
-save('palette/palette_yoda_after1.mat', 'meanSpectra2', 'wl2');
+save('palette/palette_cactus_before1.mat', 'meanSpectra1', 'wl1');
+save('palette/palette_cactus_after1.mat', 'meanSpectra2', 'wl2');
 %%
 %saving registered cubes
 outFolder = '/home/oem/eliza/data/processed/reflectance/registered';
-basename1 = 'yoda_reg_before1';
-basename2 = 'yoda_reg_after1';
+basename1 = 'cactus_reg_before1';
+basename2 = 'cactus_reg_after1';
 
 datFile1 = fullfile(outFolder, [basename1 '.dat']);
 hdrFile1 = fullfile(outFolder, [basename1 '.hdr']);
@@ -473,8 +474,32 @@ img2_uint16 = uint16(round(img2 * 65535));
 img_diag_uint16 = uint16(round(img_diag * 65535));
 
 % Specify your save folder and file names
-saveFolder = '/your/output/path'; % <-- replace with your actual path
+saveFolder = '/home/oem/eliza/mac-shared'; 
 
-imwrite(img1_uint16, fullfile(saveFolder, 'palette_before_prophoto.png'), 'png');
-imwrite(img2_uint16, fullfile(saveFolder, 'palette_after_prophoto.png'), 'tif');
-imwrite(img_diag_uint16, fullfile(saveFolder, 'palette_diag_prophoto.tif'), 'tif');
+saveProPhotoTIFF(img1_uint16, fullfile(saveFolder, 'cactus_palette_before.tif'));
+saveProPhotoTIFF(img2_uint16, fullfile(saveFolder, 'cactus_palette_after.tif'));
+saveProPhotoTIFF(img_diag_uint16, fullfile(saveFolder, 'cactus_palette_diag.tif'));
+
+%%
+figure; imshow(img1); title('Palette Yoda (Before)');
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 14, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+
+figure;
+imagesc(dE_grid);
+axis image off; colormap(jet(255)); colorbar; clim([0 10]);
+title('\DeltaE_{00} between palette patches');
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    text(col, row, num2str(k), ...
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',14, 'FontWeight','bold');
+end

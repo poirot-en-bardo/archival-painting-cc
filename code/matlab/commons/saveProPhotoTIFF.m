@@ -8,7 +8,7 @@ function saveProPhotoTIFF(rgbImg, outFile)
     % convert to 16-bit
     img16 = im2uint16(rgbImg);
 
-    iccPath = '../../../data/icc/ProPhoto.icm';
+    iccPath = '../../../data/icc/ROMM_RGB.icc';
 
 
     % read ICC profile bytes
@@ -27,7 +27,7 @@ function saveProPhotoTIFF(rgbImg, outFile)
     tag.BitsPerSample       = 16;
     tag.SamplesPerPixel     = 3;
     tag.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-    tag.Compression         = Tiff.Compression.Deflate;         
+    tag.Compression         = Tiff.Compression.AdobeDeflate;         
     tag.RowsPerStrip        = min(512, size(img16,1));      % helps compression
     tag.ICCProfile          = iccData(:)';   % must be row uint8 array
 
