@@ -1,8 +1,8 @@
 clear; close all;
-cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
-cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
-% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
-% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
+% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
+% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
+cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
+cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
 
 hcube1 = hypercube(cubeFile1); cube1 = hcube1.DataCube; wl1 = hcube1.Wavelength;
 hcube2 = hypercube(cubeFile2); cube2 = hcube2.DataCube; wl2 = hcube2.Wavelength;
@@ -13,17 +13,25 @@ cube2 = cube2(:,:,valid_idx2); wl2 = wl2(valid_idx2);
 
 %%
 % Crop 
+% For cube 1
 figure; imagesc(cube1(:,:,80)); axis image; colormap gray; title('Crop FILM');
-roi1 = drawrectangle; r1 = round(roi1.Position);
+roi1 = drawrectangle('InteractionsAllowed','all');
+% Wait for you to double-click inside rectangle to confirm
+wait(roi1);
+r1 = round(roi1.Position);
 x1a = max(1, r1(1)); y1a = max(1, r1(2));
 x1b = min(size(cube1,2), x1a + r1(3) - 1); y1b = min(size(cube1,1), y1a + r1(4) - 1);
 cube1_crop = cube1(y1a:y1b, x1a:x1b, :);
 
+% For cube 2
 figure; imagesc(cube2(:,:,80)); axis image; colormap gray; title('Crop PAINTING');
-roi2 = drawrectangle; r2 = round(roi2.Position);
+roi2 = drawrectangle('InteractionsAllowed','all');
+wait(roi2);
+r2 = round(roi2.Position);
 x2a = max(1, r2(1)); y2a = max(1, r2(2));
 x2b = min(size(cube2,2), x2a + r2(3) - 1); y2b = min(size(cube2,1), y2a + r2(4) - 1);
 cube2_crop = cube2(y2a:y2b, x2a:x2b, :);
+
 %%
 % Subsample both to same size
 scale = 0.5; % or whatever you want
@@ -78,7 +86,7 @@ colmin = min(cols); colmax = max(cols);
 
 cube1_final = cube1_sub(rowmin:rowmax, colmin:colmax, :);
 cube2_final = cube2_reg(rowmin:rowmax, colmin:colmax, :);
-
+%
 % Optional: show overlays to check alignment
 figure; imshowpair(mat2gray(cube1_final(:,:,bandToShow)), mat2gray(cube2_final(:,:,bandToShow)));
 title('After Automatic Registration');
@@ -97,88 +105,9 @@ cube2_final = hcube2.DataCube;
 wl1 = hcube1.Wavelength;
 
 
-%% palette extraction
-% Divide into blocks
-[H, W, B] = size(cube1_final);
-block_h = 10; block_w = 10;
-n_blocks_y = floor(H/block_h);
-n_blocks_x = floor(W/block_w);
-
-meanSpectra1 = zeros(n_blocks_y*n_blocks_x, B);
-meanSpectra2 = zeros(n_blocks_y*n_blocks_x, B);
-
-idx = 1;
-for i = 1:n_blocks_y
-    for j = 1:n_blocks_x
-        r_idx = (i-1)*block_h+1:i*block_h;
-        c_idx = (j-1)*block_w+1:j*block_w;
-
-        block1 = reshape(cube1_final(r_idx, c_idx, :), [], B);
-        block2 = reshape(cube2_final(r_idx, c_idx, :), [], B);
-
-        meanSpectra1(idx,:) = mean(block1, 1, 'omitnan');
-        meanSpectra2(idx,:) = mean(block2, 1, 'omitnan');
-        idx = idx + 1;
-    end
-end
-
-
 %%
-% Paths to CMF and D65 files
-cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
-ill = importdata('../../../data/CIE_D65.txt');
-cmf_wl = cmf(:,1);
-cmf_xyz = cmf(:,2:4);
-ill_wl = ill(:,1);
-ill_val = ill(:,2);
-% Interpolate illuminant and CMFs to your wavelengths
-ill_interp = interp1(ill_wl, ill_val, wl1, 'linear', 'extrap');
-cmf_interp = interp1(cmf_wl, cmf_xyz, wl1, 'linear', 'extrap');
-
-nColors = size(meanSpectra1, 1);
-
-% Find white point for scaling XYZ to Lab (Y=100 for white)
-white_refl = ones(1, numel(wl1));
-white_xyz = (white_refl .* ill_interp(:)') * cmf_interp;
-white_xyz = white_xyz / sum(ill_interp(:)' .* cmf_interp(:,2)');
-ill_interp = ill_interp(:)';
-% Convert spectra to XYZ, then scale, then to Lab & RGB
-XYZs1 = (meanSpectra1 .* ill_interp) * cmf_interp;
-XYZs2 = (meanSpectra2 .* ill_interp) * cmf_interp;
-XYZs1 = XYZs1 ./ sum(ill_interp .* cmf_interp(:,2)', 2); % Normalize
-XYZs2 = XYZs2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
-
-XYZs1_scaled = XYZs1 * (100 / white_xyz(2));
-XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
-
-Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
-Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
-
-RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','srgb')));
-RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','srgb')));
-
-% Block palette grid size
-grid_h = n_blocks_y;
-grid_w = n_blocks_x;
-patchSize = 40;
-
-img1 = ones(grid_h * patchSize, grid_w * patchSize, 3);
-img2 = ones(grid_h * patchSize, grid_w * patchSize, 3);
-
-for k = 1:nColors
-    row = floor((k-1)/grid_w);
-    col = mod((k-1), grid_w);
-    r_idx = (row*patchSize+1):((row+1)*patchSize);
-    c_idx = (col*patchSize+1):((col+1)*patchSize);
-    img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
-    img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
-end
-
-
-%
-figure; imshow(img1); title('Palette from Cube 1 (Before)');
-figure; imshow(img2); title('Palette from Cube 2 (After)');
-
+cube1_final = fliplr(cube1_final);
+cube2_final = fliplr(cube2_final);
 
 
 %% K means only on non-specular pixels
@@ -222,7 +151,7 @@ end
 
 % Load CIE and D65 data
 cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
-ill = importdata('../../../data/CIE_D65.txt');
+ill = importdata('../../../data/CIE_D50.txt');
 cmf_interp = interp1(cmf(:,1), cmf(:,2:4), wl1, 'linear', 'extrap');
 ill_interp = interp1(ill(:,1), ill(:,2), wl1, 'linear', 'extrap')';
 
@@ -246,9 +175,21 @@ XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
 Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
 Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
 
+
+% Calculate XYZ for all pixels
+XYZ1 = ref2xyz(ill_interp(:), cmf_interp, meanSpectra1);  % returns [numPixels x 3]
+XYZ2 = ref2xyz(ill_interp(:), cmf_interp, meanSpectra2);
+
+% XYZ to Lab
+Lab1 = xyz2lab(XYZ1);
+Lab2 = xyz2lab(XYZ2);
+
+
 % sRGB conversion for display
-RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d65')));
-RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d65')));
+% RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
+% RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
+RGBs1 = max(0, min(1, xyz2rgb(XYZ1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
+RGBs2 = max(0, min(1, xyz2rgb(XYZ2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
 
 
 % Compute chroma from Lab2 (use after, but you can use before if you prefer)
@@ -340,13 +281,13 @@ saveas(gcf, '/home/oem/eliza/mac-shared/deltaE_grid_cactus.png');
 %% Save
 meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
 meanSpectra2 = meanSpectra2(finalOrder, :);
-save('palette/palette_cactus_before1.mat', 'meanSpectra1', 'wl1');
-save('palette/palette_cactus_after1.mat', 'meanSpectra2', 'wl2');
+% save('palette/palette_cactus_before1.mat', 'meanSpectra1', 'wl1');
+% save('palette/palette_cactus_after1.mat', 'meanSpectra2', 'wl2');
 %%
 %saving registered cubes
 outFolder = '/home/oem/eliza/data/processed/reflectance/registered';
-basename1 = 'cactus_reg_before1';
-basename2 = 'cactus_reg_after1';
+basename1 = 'yoda_reg_before1';
+basename2 = 'yoda_reg_after1';
 
 datFile1 = fullfile(outFolder, [basename1 '.dat']);
 hdrFile1 = fullfile(outFolder, [basename1 '.hdr']);
@@ -503,3 +444,98 @@ for k = 1:nColors
     text(col, row, num2str(k), ...
         'HorizontalAlignment','center', 'Color','w', 'FontSize',14, 'FontWeight','bold');
 end
+
+
+%% block-wise approach
+[H, W, B] = size(cube1_final);
+block_h = 10; block_w = 10;
+n_blocks_y = floor(H/block_h);
+n_blocks_x = floor(W/block_w);
+
+meanSpectra1 = zeros(n_blocks_y*n_blocks_x, B);
+meanSpectra2 = zeros(n_blocks_y*n_blocks_x, B);
+
+idx = 1;
+for i = 1:n_blocks_y
+    for j = 1:n_blocks_x
+        r_idx = (i-1)*block_h+1:i*block_h;
+        c_idx = (j-1)*block_w+1:j*block_w;
+
+        block1 = reshape(cube1_final(r_idx, c_idx, :), [], B);
+        block2 = reshape(cube2_final(r_idx, c_idx, :), [], B);
+
+        meanSpectra1(idx,:) = mean(block1, 1, 'omitnan');
+        meanSpectra2(idx,:) = mean(block2, 1, 'omitnan');
+        idx = idx + 1;
+    end
+end
+
+
+%%
+% Paths to CMF and D65 files
+cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
+ill = importdata('../../../data/CIE_D65.txt');
+cmf_wl = cmf(:,1);
+cmf_xyz = cmf(:,2:4);
+ill_wl = ill(:,1);
+ill_val = ill(:,2);
+% Interpolate illuminant and CMFs to your wavelengths
+ill_interp = interp1(ill_wl, ill_val, wl1, 'linear', 'extrap');
+cmf_interp = interp1(cmf_wl, cmf_xyz, wl1, 'linear', 'extrap');
+
+nColors = size(meanSpectra1, 1);
+
+% Find white point for scaling XYZ to Lab (Y=100 for white)
+white_refl = ones(1, numel(wl1));
+white_xyz = (white_refl .* ill_interp(:)') * cmf_interp;
+white_xyz = white_xyz / sum(ill_interp(:)' .* cmf_interp(:,2)');
+ill_interp = ill_interp(:)';
+% Convert spectra to XYZ, then scale, then to Lab & RGB
+XYZs1 = (meanSpectra1 .* ill_interp) * cmf_interp;
+XYZs2 = (meanSpectra2 .* ill_interp) * cmf_interp;
+XYZs1 = XYZs1 ./ sum(ill_interp .* cmf_interp(:,2)', 2); % Normalize
+XYZs2 = XYZs2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
+
+XYZs1_scaled = XYZs1 * (100 / white_xyz(2));
+XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
+
+Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
+Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
+
+
+
+% Calculate XYZ for all pixels
+XYZ1 = ref2xyz(ill_interp(:), cmf_interp, meanSpectra1);  % returns [numPixels x 3]
+XYZ2 = ref2xyz(ill_interp(:), cmf_interp, meanSpectra2);
+
+% XYZ to Lab
+Lab1 = xyz2lab(XYZ1);
+Lab2 = xyz2lab(XYZ2);
+
+% RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','srgb')));
+% RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','srgb')));
+
+RGBs1 = max(0, min(1, xyz2rgb(XYZ1, 'ColorSpace','srgb')));
+RGBs2 = max(0, min(1, xyz2rgb(XYZ2, 'ColorSpace','srgb')));
+
+% Block palette grid size
+grid_h = n_blocks_y;
+grid_w = n_blocks_x;
+patchSize = 40;
+
+img1 = ones(grid_h * patchSize, grid_w * patchSize, 3);
+img2 = ones(grid_h * patchSize, grid_w * patchSize, 3);
+
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    r_idx = (row*patchSize+1):((row+1)*patchSize);
+    c_idx = (col*patchSize+1):((col+1)*patchSize);
+    img1(r_idx, c_idx, :) = repmat(reshape(RGBs1(k,:),1,1,3), patchSize, patchSize, 1);
+    img2(r_idx, c_idx, :) = repmat(reshape(RGBs2(k,:),1,1,3), patchSize, patchSize, 1);
+end
+
+
+%
+figure; imshow(img1); title('Palette from Cube 1 (Before)');
+figure; imshow(img2); title('Palette from Cube 2 (After)');

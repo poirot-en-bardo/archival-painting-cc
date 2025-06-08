@@ -1,7 +1,10 @@
-hcube1= hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr');
-hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
-hcube1 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_before1.hdr');
-hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_after1.hdr');
+img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr';
+img_path2 = '/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr';
+img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_before1.hdr';
+img_path2 = '/home/oem/eliza/data/processed/reflectance/registered/yoda_reg_after1.hdr';
+hcube1= hypercube(img_path1);
+hcube2 = hypercube(img_path2);
+
 
 cube1_final = hcube1.DataCube;
 cube2_final = hcube2.DataCube;
@@ -37,23 +40,19 @@ valid_mask = mask1 & mask2;
 
 % Prepare output
 deltaE_map = nan(H*W,1);
-
+%%
 if any(valid_mask)
     refl1 = cube1_2D(valid_mask, :);
     refl2 = cube2_2D(valid_mask, :);
 
-    % Spectra to XYZ
-    XYZ1 = (refl1 .* ill_interp) * cmf_interp;
-    XYZ2 = (refl2 .* ill_interp) * cmf_interp;
-    XYZ1 = XYZ1 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
-    XYZ2 = XYZ2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
-    XYZ1_scaled = XYZ1 * (100 / white_xyz(2));
-    XYZ2_scaled = XYZ2 * (100 / white_xyz(2));
-
+    
+    % Calculate XYZ for all pixels
+    XYZ1 = ref2xyz(ill_interp(:), cmf_interp, refl1');  % returns [numPixels x 3]
+    XYZ2 = ref2xyz(ill_interp(:), cmf_interp, refl2');
 
     % XYZ to Lab
-    Lab1 = xyz2lab(XYZ1_scaled, 'WhitePoint', 'd50');
-    Lab2 = xyz2lab(XYZ2_scaled, 'WhitePoint', 'd50');
+    Lab1 = xyz2lab(XYZ1);
+    Lab2 = xyz2lab(XYZ2);
 
     % Delta E 2000
     deltaE_vec = deltaE2000(Lab1, Lab2);
@@ -65,12 +64,22 @@ end
 % Reshape to 2D
 deltaE_map_img = reshape(deltaE_map, H, W);
 
+%%
 % Display
-figure; imagesc(deltaE_map_img); axis image off;
-colormap(jet(256)); colorbar; clim([0 10]);
-title('\DeltaE_{00} (pixel-wise, full painting)');
+save_folder = './results/deltaE';
+
+figure('Position', [100 100 2000 1500]);
+imagesc(deltaE_map_img); axis image off;
+colormap(jet(256)); colorbar; clim([0 15]);
+title('\DeltaE_{00} (before vs. after)', 'FontSize',20);
+%
+[~, img_name, ~] = fileparts(img_path1);
+saveas(gcf, fullfile(save_folder, [img_name '_dE_map_GT.png']));
 
 % Optional: save as uint16
 deltaE_norm = mat2gray(deltaE_map_img); % [0,1]
 deltaE_uint16 = uint16(deltaE_norm * 65535);
-% imwrite(deltaE_uint16, 'deltaE_map_full.png');
+%%
+% imwrite(deltaE_uint16, 'results/yoda_dE_GT_hsi.png');
+imwrite(deltaE_uint16, fullfile(save_folder, [img_name '_dE_GT_hsi.png']));
+

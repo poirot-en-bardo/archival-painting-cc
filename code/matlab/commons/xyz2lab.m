@@ -22,7 +22,7 @@ function Lab=xyz2lab(XYZ,XYZn)
 %   web:       http://www.digitalcolour.org
 
 if nargin<2
-   rwhite=d(50);
+   rwhite=[0.9642, 1.0000, 0.8251];
 else
    rwhite=XYZn;
 end
