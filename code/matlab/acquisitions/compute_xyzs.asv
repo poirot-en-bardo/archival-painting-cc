@@ -1,3 +1,20 @@
+function XYZ = ref2xyz(S, cmf, refl)
+    % S: [numBands x 1]         (illuminant)
+    % cmf: [numBands x 3]       (color matching functions)
+    % refl: [numColors x numBands]   (spectra in rows!)
+    % Returns: XYZ [numColors x 3]
+
+    k = 100 / dot(cmf(:,2), S); % CIE normalization
+
+    % Compute XYZ for all colors
+    % Each row of refl is a color; need to operate across columns
+    X = k * sum(refl .* (cmf(:,1)' .* S'), 2);
+    Y = k * sum(refl .* (cmf(:,2)' .* S'), 2);
+    Z = k * sum(refl .* (cmf(:,3)' .* S'), 2);
+
+    XYZ = [X, Y, Z];
+end
+
 % Simplified pipeline: compute XYZ/Lab/RGB for all subfolders, no registration
 clear; close all;
 parent_folder = "/home/oem/eliza/data/to_register/cactus";
@@ -10,7 +27,7 @@ led_path = '../../../data/film/CVCL10bands.txt';
 
 fullCMFs = importdata(cmf_path);
 D50_SPD = importdata(D50_path);
-LEDset = readmatrix(led_path, 'Delimiter','	');
+LEDset = readmatrix(led_path, 'Delimiter','\t');
 wl_led = LEDset(:,1);
 bandN = size(LEDset, 2) - 1;
 
@@ -26,14 +43,29 @@ for i = 1:length(folders)
     mov_folder = fullfile(parent_folder, folders(i).name);
     flatfielded = fullfile(mov_folder, 'FlatFielded');
     if ~exist(flatfielded, 'dir')
-        fprintf('Skipping %s: no FlatFielded folder.\n', folders(i).name);
-        continue;
+        hdr_test = dir(fullfile(mov_folder, '*.[Hh][Dd][Rr]'));
+        img_test = dir(fullfile(mov_folder, '*.[Ii][Mm][Gg]'));
+        tiff_test = dir(fullfile(mov_folder, '*.tif'));
+
+        if ~isempty(hdr_test) && ~isempty(img_test) || ~isempty(tiff_test)
+            flatfielded = mov_folder;
+        else
+            fprintf('Skipping %s: no valid image data found.', folders(i).name);
+            continue;
+        end
+    end
+        else
+            fprintf('Skipping %s: no valid image data found.', folders(i).name);
+            continue;
+        end
+    end
+        
     end
 
     fprintf('Processing %s...\n', folders(i).name);
 
-    hdr_file = dir(fullfile(flatfielded, '*.hdr'));
-    img_file = dir(fullfile(flatfielded, '*.img'));
+    hdr_file = dir(fullfile(flatfielded, '*.[Hh][Dd][Rr]'));
+    img_file = dir(fullfile(flatfielded, '*.[Ii][Mm][Gg]'));
 
     if ~isempty(hdr_file) && ~isempty(img_file)
         hcube = hypercube(fullfile(flatfielded, hdr_file(1).name));
@@ -41,26 +73,22 @@ for i = 1:length(folders)
         wl_mov = hcube.Wavelength;
         valid_idx = find(wl_mov >= 380 & wl_mov <= 780);
         cube_mov = cube_mov(:,:,valid_idx);
+        wl_mov = wl_mov(valid_idx);
 
         cube_mov = flip(cube_mov, 2);  % Flip horizontally
         cube_mov = imresize(cube_mov, scale);
 
-        wl_mov = wl_mov(valid_idx);
-
-        % Cropping .hdr
         figure; imagesc(cube_mov(:,:,round(size(cube_mov,3)/2))); axis image; colormap gray; title('Crop HDR image');
         roi = drawrectangle('InteractionsAllowed','all'); wait(roi); close(gcf);
         r = round(roi.Position);
-        xa = max(1, round(r(1))); ya = max(1, round(r(2)));
-        xb = min(size(cube_mov,2), xa + max(1, round(r(3))) - 1);
-        yb = min(size(cube_mov,1), ya + max(1, round(r(4))) - 1);
+        xa = max(1, r(1)); ya = max(1, r(2));
+        xb = min(size(cube_mov,2), xa + r(3) - 1); yb = min(size(cube_mov,1), ya + r(4) - 1);
         cube_mov = cube_mov(ya:yb, xa:xb, :);
 
-        % Spectral to color conversion
+        refl = reshape(cube_mov, [], size(cube_mov,3));
         cmf_interp = interp1(fullCMFs(:,1), fullCMFs(:,2:4), wl_mov, 'linear', 'extrap');
         ill_interp = interp1(D50_SPD(:,1), D50_SPD(:,2), wl_mov, 'linear', 'extrap');
-
-        mov_XYZ = ref2xyz(ill_interp(:), cmf_interp, reshape(cube_mov, [], size(cube_mov,3)));
+        mov_XYZ = ref2xyz(ill_interp(:), cmf_interp, refl);
 
     else
         tiff_files = dir(fullfile(flatfielded, '*.tif'));
@@ -77,21 +105,19 @@ for i = 1:length(folders)
 
         cube_mov = imresize(cube_mov, scale);
         cube_mov = flip(cube_mov, 2);  % Flip horizontally
-        cube_mov = flip(cube_mov, 1);  % Flip vertically for TIFF
+        cube_mov = flip(cube_mov, 1);  % Flip vertically
 
-        % Cropping TIFF
         slice = double(cube_mov(:,:,round(size(cube_mov,3)/2)));
-slice = slice - min(slice(:));
-slice = slice / max(slice(:));
-slice = slice .^ 0.2;  % high gamma for visibility
-figure; imagesc(slice); axis image; colormap gray; title('Crop TIFF image');
-        roi = drawrectangle('InteractionsAllowed','all'); wait(roi);
+        slice = slice - min(slice(:));
+        slice = slice / max(slice(:));
+        slice = slice .^ 0.2;  % high gamma for visibility
+        figure; imagesc(slice); axis image; colormap gray; title('Crop TIFF image');
+        roi = drawrectangle('InteractionsAllowed','all'); wait(roi); close(gcf);
         r = round(roi.Position);
         xa = max(1, r(1)); ya = max(1, r(2));
         xb = min(size(cube_mov,2), xa + r(3) - 1); yb = min(size(cube_mov,1), ya + r(4) - 1);
         cube_mov = cube_mov(ya:yb, xa:xb, :);
 
-        % Use LED-based spectral estimation
         d50_spd = interp1(D50_SPD(:,1), D50_SPD(:,2), wl_led, 'linear', 'extrap');
         cmf_xyz = interp1(fullCMFs(:,1), fullCMFs(:,2:4), wl_led, 'linear', 'extrap');
 
@@ -107,23 +133,19 @@ figure; imagesc(slice); axis image; colormap gray; title('Crop TIFF image');
         cube_dbl = double(cube_mov) / double(intmax('uint16'));
         cube_illum = cube_dbl .* reshape(d50_band, 1, 1, bandN);
 
-        cube_flat = reshape(cube_illum, [], bandN);
-        mov_XYZ = cube_flat * cmf_band;
-
-        k_factor = sum(d50_band .* cmf_band(:,2));
-        mov_XYZ = mov_XYZ / k_factor;
+        refl = reshape(cube_illum, [], bandN);
+        mov_XYZ = ref2xyz(d50_band(:), cmf_band, refl);
+        
     end
 
     mov_Lab = xyz2lab(mov_XYZ);
     mov_RGB = xyz2prophoto(mov_XYZ / 100, true);
 
-    % Display XYZ image
     H = size(cube_mov, 1);
     W = size(cube_mov, 2);
     XYZ_img = reshape(mov_XYZ, H, W, 3);
     figure; imagesc(mat2gray(XYZ_img)); axis image; title('XYZ Image Preview');
 
-    % Save results
     save_name = sprintf('%s_data_%d', folders(i).name, cube_idx);
     save(fullfile(outFolder, [save_name '.mat']), 'mov_XYZ', 'mov_Lab', 'mov_RGB');
     cube_idx = cube_idx + 1;
