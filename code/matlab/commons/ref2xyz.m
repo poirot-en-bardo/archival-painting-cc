@@ -1,12 +1,16 @@
-function XYZ = ref2xyz(S, cmf, relf)
-    % S: [numBands x 1]
-    % cmf: [numBands x 3]
-    % d: [numBands x numPixels]
-    % Returns: XYZ [numPixels x 3]
-    k = 100 / dot(cmf(:,2), S); % Normalization using Y-bar
-    % Each band for all pixels: [numBands x numPixels]
-    X = k * sum(relf .* (cmf(:,1) .* S), 1);
-    Y = k * sum(relf .* (cmf(:,2) .* S), 1);
-    Z = k * sum(relf .* (cmf(:,3) .* S), 1);
-    XYZ = [X; Y; Z]';
+function XYZ = ref2xyz(S, cmf, refl)
+    % S: [numBands x 1]         (illuminant)
+    % cmf: [numBands x 3]       (color matching functions)
+    % refl: [numColors x numBands]   (spectra in rows!)
+    % Returns: XYZ [numColors x 3]
+
+    k = 100 / dot(cmf(:,2), S); % CIE normalization
+
+    % Compute XYZ for all colors
+    % Each row of refl is a color; need to operate across columns
+    X = k * sum(refl .* (cmf(:,1)' .* S'), 2);
+    Y = k * sum(refl .* (cmf(:,2)' .* S'), 2);
+    Z = k * sum(refl .* (cmf(:,3)' .* S'), 2);
+
+    XYZ = [X, Y, Z];
 end
