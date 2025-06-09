@@ -1,7 +1,7 @@
 
 % Simplified pipeline: compute XYZ/Lab/RGB only for FlatFielded folders
 clear; close all;
-parent_folder = "/home/oem/eliza/data/to_register/cactus";
+parent_folder = "/home/oem/eliza/data/to_register/yoda";
 outFolder = '/home/oem/eliza/mac-shared/registered';
 if ~exist(outFolder, 'dir')
     mkdir(outFolder);
@@ -77,7 +77,12 @@ for i = 1:length(folders)
     end
 
     cube_dbl = double(cube_mov) / double(intmax('uint16'));
-    refl = reshape(cube_dbl, [], bandN);
+    cube_illum = cube_dbl .* reshape(d50_band, 1, 1, bandN);
+
+    % k = sum(d50_band .* cmf_band(:,2));  
+    % radiance = reshape(cube_illum, [], bandN);
+    % mov_XYZ = radiance * cmf_band;
+    % mov_XYZ = mov_XYZ / k;
     mov_XYZ = ref2xyz(d50_band(:), cmf_band, refl);
 
 

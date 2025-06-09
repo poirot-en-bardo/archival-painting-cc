@@ -1,7 +1,10 @@
 % Hyperspectral XYZ/Lab/RGB computation pipeline
 clear; close all;
-parent_folder = "/home/oem/eliza/data/to_register/cactus";
+parent_folder = "/home/oem/eliza/data/to_register/yoda";
 outFolder = '/home/oem/eliza/mac-shared/registered_hyper';
+if ~exist(outFolder, 'dir')
+    mkdir(outFolder);
+end
 
 % Load CMFs and D50
 cmf_path = '../../../data/CIE2degCMFs_full.csv';
@@ -58,17 +61,18 @@ for i = 1:length(folders)
     mov_XYZ = ref2xyz(ill_interp(:), cmf_interp, refl);
 
     mov_Lab = xyz2lab(mov_XYZ);
-    mov_RGB = xyz2prophoto(mov_XYZ / 100, true);
+    mov_RGB = xyz2prophoto(mov_XYZ ./ 100, true);
 
     H = size(cube_mov, 1);
     W = size(cube_mov, 2);
     XYZ_img = reshape(mov_XYZ, H, W, 3);
+    Lab_img = reshape(mov_Lab, H, W, 3);
     RGB_img = reshape(mov_RGB, H, W, 3);
 
     figure; imagesc(mat2gray(XYZ_img)); axis image; title('XYZ Image Preview');
     figure; imagesc(mat2gray(RGB_img)); axis image; title('RGB Image Preview');
 
     save_name = sprintf('%s_data_%d', folders(i).name, cube_idx);
-    save(fullfile(outFolder, [save_name '.mat']), 'mov_XYZ', 'mov_Lab', 'mov_RGB');
+    save(fullfile(outFolder, [save_name '.mat']), 'XYZ_img', 'Lab_img', 'RGB_img');
     cube_idx = cube_idx + 1;
 end
