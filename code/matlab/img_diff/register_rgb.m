@@ -20,6 +20,62 @@ h2 = drawrectangle(); rect2 = round(h2.Position);
 refCrop = imcrop(refRGB, rect2);
 close;
 
+%%
+% INPUTS
+ref_mat = '/home/oem/eliza/mac-shared/registered/yoda/yoda_after.mat';
+mov_mat = '/home/oem/eliza/mac-shared/registered/yoda/yoda_halogen_fuji_exp0_data_1.mat';
+outFolder = '/home/oem/eliza/mac-shared/registered_output';
+if ~exist(outFolder, 'dir')
+    mkdir(outFolder);
+end
+
+% Load .mat files
+ref = load(ref_mat);
+mov = load(mov_mat);
+
+% --- White balance the moving ProPhoto RGB image
+figure; imshow(mov.RGB_img);
+title('Draw rectangle around white patch and double-click');
+hW = drawrectangle();
+wait(hW);
+whitePos = hW.Position;
+xw = max(1, floor(whitePos(1)));
+yw = max(1, floor(whitePos(2)));
+ww = floor(whitePos(3));
+hw = floor(whitePos(4));
+xw_end = min(size(mov.RGB_img,2), xw + ww - 1);
+yw_end = min(size(mov.RGB_img,1), yw + hw - 1);
+patch_rgb = mov.RGB_img(yw:yw_end, xw:xw_end, :);
+white_patch = squeeze(mean(mean(patch_rgb,1),2));
+
+% Apply white balance
+rgbWB = mov.RGB_img ./ reshape(white_patch,1,1,3);
+rgbWB = max(min(rgbWB,1),0);
+mov_rgb_wb = rgbWB;
+%%
+% Crop moving image before registration
+figure; imshow(mov_rgb_wb);
+title('Draw rectangle to crop moving image and double-click');
+hCrop = drawrectangle();
+wait(hCrop);
+cropPos = round(hCrop.Position);
+xc = max(1, cropPos(1));
+yc = max(1, cropPos(2));
+wc = cropPos(3);
+hc = cropPos(4);
+x_end = min(size(mov_rgb_wb, 2), xc + wc - 1);
+y_end = min(size(mov_rgb_wb, 1), yc + hc - 1);
+
+mov_rgb_wb = mov_rgb_wb(yc:y_end, xc:x_end, :);
+mov.XYZ_img = mov.XYZ_img(yc:y_end, xc:x_end, :);
+
+
+% Use white-balanced RGB for registration
+ref_img = im2uint8(ref.RGB_img);
+mov_img = im2uint8(mov_rgb_wb);
+%%
+inputCrop = mov_img;
+refCrop = ref_img;
 %% 3) Resize crops to match
 [h1,w1,~] = size(inputCrop);
 [h2,w2,~] = size(refCrop);
@@ -117,3 +173,34 @@ function result = register_images(inputImg, refImg)
     result.inliersMoving  = matchedMoving(inlierIdx);
     result.inliersFixed   = matchedFixed(inlierIdx);
 end
+
+
+%% manual registration
+
+
+% movingPointsFile = 'movingPoints.mat';
+% fixedPointsFile = 'fixedPoints.mat';
+% movingPoints = []; fixedPoints = [];
+% 
+% if exist(movingPointsFile, 'file') && exist(fixedPointsFile, 'file')
+%     load(movingPointsFile, 'movingPoints');
+%     load(fixedPointsFile,  'fixedPoints');
+% end
+% 
+% useInitialPoints = ~isempty(movingPoints) && ~isempty(fixedPoints) && ...
+%                    size(movingPoints,2) == 2 && size(fixedPoints,2) == 2;
+% 
+% if useInitialPoints
+%     [movingPoints, fixedPoints] = cpselect(mov_img, ref_img, movingPoints, fixedPoints, 'Wait', true);
+% else
+%     [movingPoints, fixedPoints] = cpselect(mov_img, ref_img, 'Wait', true);
+% end
+% 
+% save(movingPointsFile, 'movingPoints');
+% save(fixedPointsFile,  'fixedPoints');
+% 
+% movingPoints = double(movingPoints(:,1:2));
+% fixedPoints  = double(fixedPoints(:,1:2));
+% 
+% % --- Compute transform and warp
+% tform = fitgeotrans(movingPoints, fixedPoints, 'projective');

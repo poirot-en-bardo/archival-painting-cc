@@ -62,9 +62,8 @@ matchedPoints2 = valid_points2(indexPairs(:,2));
 % --- Estimate transformation (affine or similarity)
 [tform, inlierIdx] = estimateGeometricTransform2D(matchedPoints2, matchedPoints1, 'affine', ...
     'MaxNumTrials', 5000, 'MaxDistance', 3);
-% You can try 'similarity' or 'projective' too
 
-% --- Visualize matches (optional)
+% --- Visualize matches 
 figure; showMatchedFeatures(I1, I2, matchedPoints1, matchedPoints2, 'montage');
 title('Matched SURF points');
 

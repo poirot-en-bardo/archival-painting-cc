@@ -1,0 +1,162 @@
+% Hyperspectral registration and RGB/XYZ export pipeline
+clear; close all;
+
+% INPUTS
+ref_mat = '/home/oem/eliza/mac-shared/registered/yoda/yoda_after.mat';
+mov_mat = '/home/oem/eliza/mac-shared/registered/yoda/yoda_halogen_fuji_exp0_data_1.mat';
+outFolder = '/home/oem/eliza/mac-shared/registered_output';
+if ~exist(outFolder, 'dir')
+    mkdir(outFolder);
+end
+
+% Load .mat files
+ref = load(ref_mat);
+mov = load(mov_mat);
+
+% --- White balance the moving ProPhoto RGB image
+figure; imshow(mov.RGB_img);
+title('Draw rectangle around white patch and double-click');
+hW = drawrectangle();
+wait(hW);
+whitePos = hW.Position;
+xw = max(1, floor(whitePos(1)));
+yw = max(1, floor(whitePos(2)));
+ww = floor(whitePos(3));
+hw = floor(whitePos(4));
+xw_end = min(size(mov.RGB_img,2), xw + ww - 1);
+yw_end = min(size(mov.RGB_img,1), yw + hw - 1);
+patch_rgb = mov.RGB_img(yw:yw_end, xw:xw_end, :);
+white_patch = squeeze(mean(mean(patch_rgb,1),2));
+
+% Apply white balance
+rgbWB = mov.RGB_img ./ reshape(white_patch,1,1,3);
+rgbWB = max(min(rgbWB,1),0);
+mov_rgb_wb = rgbWB;
+%%
+% Crop moving image before registration
+figure; imshow(mov_rgb_wb);
+title('Draw rectangle to crop moving image and double-click');
+hCrop = drawrectangle();
+wait(hCrop);
+cropPos = round(hCrop.Position);
+xc = max(1, cropPos(1));
+yc = max(1, cropPos(2));
+wc = cropPos(3);
+hc = cropPos(4);
+x_end = min(size(mov_rgb_wb, 2), xc + wc - 1);
+y_end = min(size(mov_rgb_wb, 1), yc + hc - 1);
+
+mov_rgb_wb = mov_rgb_wb(yc:y_end, xc:x_end, :);
+mov.XYZ_img = mov.XYZ_img(yc:y_end, xc:x_end, :);
+
+
+% Use white-balanced RGB for registration
+ref_img = im2uint8(ref.RGB_img);
+mov_img = im2uint8(mov_rgb_wb);
+
+
+%%
+% Feature matching
+% Detect SIFT features
+grayIn  = im2single(rgb2gray(mov_img));
+grayRef = im2single(rgb2gray(ref_img));
+
+ptsIn  = detectSIFTFeatures(grayIn);
+ptsRef = detectSIFTFeatures(grayRef);
+[fIn,  vptsIn]  = extractFeatures(grayIn,  ptsIn);
+[fRef, vptsRef] = extractFeatures(grayRef, ptsRef);
+
+% Match features with Lowe's ratio test
+idxPairs = matchFeatures(fIn, fRef, ...
+    'MatchThreshold', 5, ...
+    'MaxRatio', 0.8, ...
+    'Unique', true);
+
+matchedMoving = vptsIn(idxPairs(:,1));
+matchedFixed  = vptsRef(idxPairs(:,2));
+
+% Estimate projective transform using RANSAC
+[tform, inlierIdx] = estimateGeometricTransform2D(...
+    matchedMoving.Location, matchedFixed.Location, ...
+    'projective', 'MaxDistance', 7, 'Confidence', 95, 'MaxNumTrials', 10000);
+
+matchedPoints1 = matchedMoving(inlierIdx, :);  % matched1 is Nx2
+matchedPoints2 = matchedFixed(inlierIdx, :);
+% figure;
+% showMatchedFeatures(ref_img, mov_img, matchedPoints1, matchedPoints2, 'montage');
+% title('Inlier matched points');
+% 
+% % --- Visualize matches 
+% figure; showMatchedFeatures(ref_img, mov_img, matched1, matched2, 'montage');
+% title('Matched points');
+
+
+%% manual registration
+
+% 
+% movingPointsFile = 'movingPoints.mat';
+% fixedPointsFile = 'fixedPoints.mat';
+% movingPoints = []; fixedPoints = [];
+% 
+% if exist(movingPointsFile, 'file') && exist(fixedPointsFile, 'file')
+%     load(movingPointsFile, 'movingPoints');
+%     load(fixedPointsFile,  'fixedPoints');
+% end
+% 
+% useInitialPoints = ~isempty(movingPoints) && ~isempty(fixedPoints) && ...
+%                    size(movingPoints,2) == 2 && size(fixedPoints,2) == 2;
+% 
+% if useInitialPoints
+%     [movingPoints, fixedPoints] = cpselect(mov_img, ref_img, movingPoints, fixedPoints, 'Wait', true);
+% else
+%     [movingPoints, fixedPoints] = cpselect(mov_img, ref_img, 'Wait', true);
+% end
+% 
+% save(movingPointsFile, 'movingPoints');
+% save(fixedPointsFile,  'fixedPoints');
+% 
+% movingPoints = double(movingPoints(:,1:2));
+% fixedPoints  = double(fixedPoints(:,1:2));
+% 
+% % --- Compute transform and warp
+% tform = fitgeotrans(movingPoints, fixedPoints, 'projective');
+
+
+
+
+%%
+% Convert to Lab and RGB (only recompute linear RGB from XYZ)
+moving_lab = xyz2lab(reshape(moving_xyz_cropped, [], 3));
+moving_rgb_linear = max(0, min(1, xyz2rgb(moving_xyz_cropped / 100, 'ColorSpace','linear-rgb','WhitePoint','d50')));
+
+ref_lab = xyz2lab(reshape(ref_cropped, [], 3));
+ref_rgb_linear = max(0, min(1, xyz2rgb(ref_cropped / 100, 'ColorSpace','linear-rgb','WhitePoint','d50')));
+
+% Reshape Lab back to image
+[h, w, ~] = size(moving_xyz_cropped);
+moving_lab = reshape(moving_lab, h, w, 3);
+ref_lab = reshape(ref_lab, h, w, 3);
+
+% Save RGB images
+[~, mov_name, ~] = fileparts(mov_mat);
+saveProPhotoTIFF(im2uint16(moving_rgb_prophoto_cropped), fullfile(outFolder, [mov_name '_reg_prophoto.tif']));
+imwrite(im2uint16(moving_rgb_linear), fullfile(outFolder, [mov_name '_reg_linear.tif']));
+
+[~, ref_name, ~] = fileparts(ref_mat);
+saveProPhotoTIFF(im2uint16(ref_rgb_prophoto_cropped), fullfile(outFolder, [mov_name '_ref_prophoto.tif']));
+imwrite(im2uint16(ref_rgb_linear), fullfile(outFolder, [ref_name '_ref_linear.tif']));
+
+
+% Save one .mat file with both registered and reference data
+XYZ_moving = moving_xyz_cropped;
+Lab_moving = moving_lab;
+RGB_moving = im2uint16(moving_rgb_prophoto_cropped);
+
+XYZ_ref = ref_cropped;
+Lab_ref = ref_lab;
+RGB_ref = im2uint16(ref_rgb_prophoto_cropped);
+
+save(fullfile(outFolder, [mov_name '_and_' ref_name '_registered.mat']), ...
+    'XYZ_moving', 'Lab_moving', 'RGB_moving', 'XYZ_ref', 'Lab_ref', 'RGB_ref');
+
+fprintf('Registration and exports completed.');
