@@ -44,8 +44,14 @@ rgb_image = reshape(rgb_input, [m, n, 3]);
 disp(['Input image size: ', num2str(size(rgb_image))]);
 
 %% Fourier-Based Enhancement Inspired by FourLLIE
+
+path1 = '/Volumes/School/Thesis/data/captures/registered/prophoto/cactus3_reg_fuji_led_after.png';
+% Read and convert image to HSV
+img = imread(path1); % uint16 image
+rgb_image = im2double(img); % Convert to [0, 1] range for processing
+%%
 % Parameters
-D0 = 10;        % Frequency threshold for low frequencies
+D0 = 5;        % Frequency threshold for low frequencies
 gamma = 1.5;    % Amplification factor for low frequencies
 
 correctedImgRGB = zeros(size(rgb_image));
@@ -88,16 +94,16 @@ for channel = 1:3
     correctedImgRGB(:, :, channel) = channel_enhanced;
     
     % Debugging: Display intermediate steps for this channel
-    figure;
-    subplot(2,3,1); imshow(mat2gray(channelImg)); title(sprintf('Original Channel %d', channel));
-    subplot(2,3,2); imshow(mat2gray(amplitude)); title('Original Amplitude');
-    subplot(2,3,3); imshow(mat2gray(amplitude_enhanced)); title('Enhanced Amplitude');
-    subplot(2,3,4); imshow(mat2gray(phase)); title('Phase');
-    subplot(2,3,5); imshow(channel_enhanced); title('Enhanced Channel');
-    subplot(2,3,6); imshow(mat2gray(D)); title('Distance Map');
+    % figure;
+    % subplot(2,3,1); imshow(mat2gray(channelImg)); title(sprintf('Original Channel %d', channel));
+    % subplot(2,3,2); imshow(mat2gray(amplitude)); title('Original Amplitude');
+    % subplot(2,3,3); imshow(mat2gray(amplitude_enhanced)); title('Enhanced Amplitude');
+    % subplot(2,3,4); imshow(mat2gray(phase)); title('Phase');
+    % subplot(2,3,5); imshow(channel_enhanced); title('Enhanced Channel');
+    % subplot(2,3,6); imshow(mat2gray(D)); title('Distance Map');
 end
 
-%% Final Display
+% Final Display
 figure;
 subplot(1,2,1); imshow(rgb_image); title('Original RGB Image');
 subplot(1,2,2); imshow(correctedImgRGB); title('Fourier Enhanced RGB Image');

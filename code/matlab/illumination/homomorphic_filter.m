@@ -2,7 +2,7 @@
 path1 = '/Volumes/School/Thesis/thesis-repo/data/scream/mod/scream_verm_nonunif.png';
 path2 = '/Volumes/School/Thesis/thesis-repo/data/scream/mod/scream_verm_nonunif2.png';
 
-path1 = '/Volumes/School/Thesis/thesis-repo/data/colorChecker_SG/pngs/no6-ekta100-expo3.png';
+path1 = '/Volumes/School/Thesis/data/captures/registered/prophoto/yoda2_reg_kodak_halogen_after.png';
 
 % Read and convert image to HSV
 img = imread(path1); % uint16 image
@@ -24,7 +24,7 @@ centerX = ceil(cols / 2);
 centerY = ceil(rows / 2);
 D = sqrt((X - centerX).^2 + (Y - centerY).^2);
 
-D0 = 1; % Cutoff frequency 
+D0 = 0.2; % Cutoff frequency 
 H = exp(-(D.^2) / (2 * D0^2)); % Gaussian low-pass filter
 
 % Apply the filter to estimate illumination component
@@ -60,4 +60,4 @@ figure; imshow(corrected_img_uint16); title('Illumination Corrected Image');
 output_path = '../../../results/illum_corrected1.png';
 
 % Save the uint16 corrected image
-imwrite(corrected_img_uint16, output_path);
+% imwrite(corrected_img_uint16, output_path);

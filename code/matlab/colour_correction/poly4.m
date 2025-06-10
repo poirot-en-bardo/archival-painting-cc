@@ -81,8 +81,8 @@ corrected_lab = X_poly_lab * coeffs_lab;
 
 %% ----------------- RGB-Based Regression  -----------------
 % Convert input and reference XYZ to RGB (using prophoto-rgb)
-rgb_input = xyz2rgb(xyz_input, 'ColorSpace', 'prophoto-rgb');
-rgb_ref   = xyz2rgb(xyz_ref,   'ColorSpace', 'prophoto-rgb');
+rgb_input = xyz2rgb(xyz_input ./100, 'ColorSpace', 'prophoto-rgb');
+rgb_ref   = xyz2rgb(xyz_ref ./100,   'ColorSpace', 'prophoto-rgb');
 
 rgb_input_train = rgb_input(train_idx, :);
 rgb_ref_train   = rgb_ref(train_idx, :);

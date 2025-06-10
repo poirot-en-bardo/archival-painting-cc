@@ -1,10 +1,9 @@
 %% Full Script: Pseudoinverse for 3rd Degree Polynomial Regression Minimizing ΔE2000
 clc; clear; close all;
 roof = double(intmax('uint16'));
-histoFACT = 200; % Histogram normalization factor
 
 %% Load spectral data
-ill = importdata('../../../data/CIE_D65.txt'); % Illuminant
+ill = importdata('../../../data/CIE_D50.txt'); % Illuminant
 CMFs_1931 = importdata('../../../data/CIE2degCMFs_1931.txt');
 CMFs_2006 = importdata('../../../data/CIE2degCMFs_2006.txt');
 CMFs = CMFs_1931;
@@ -21,7 +20,7 @@ inCUBE = hcube.DataCube;
 bands = hcube.Wavelength;
 [m, n, bd] = size(inCUBE);
 lincube = reshape(inCUBE, [], bd);
-
+%%
 % Interpolate illuminant and CMFs to captured wavelengths
 illIP = interp1(ill(:,1), ill(:,2), bands, 'spline');
 CMFsIP = [interp1(CMFs(:,1), CMFs(:,2), bands, 'spline'), ...
@@ -82,8 +81,8 @@ corrected_lab = X_poly_lab * coeffs_lab;
 
 %% ----------------- RGB-Based Regression  -----------------
 % Convert input and reference XYZ to RGB (using prophoto-rgb)
-rgb_input = xyz2rgb(xyz_input, 'ColorSpace', 'prophoto-rgb');
-rgb_ref   = xyz2rgb(xyz_ref,   'ColorSpace', 'prophoto-rgb');
+rgb_input = xyz2rgb(xyz_input ./100, 'ColorSpace', 'prophoto-rgb');
+rgb_ref   = xyz2rgb(xyz_ref ./100,   'ColorSpace', 'prophoto-rgb');
 
 rgb_input_train = rgb_input(train_idx, :);
 rgb_ref_train   = rgb_ref(train_idx, :);
@@ -145,8 +144,6 @@ if ~exist(output_folder, 'dir'), mkdir(output_folder); end
 evaluate_error(lab_from_rgb_ref, corrected_lab_from_rgb, test_idx, m, n, ...
     'LabFromRGB_', output_folder, img_name + "_error_poly3.png");
 
-disp('---------');
-disp('ΔE2000 results for Lab-from-RGB model (i.e., camera-only scenario):');
 
 %% function for creating the 3rd polynomi
 % al expression
@@ -158,7 +155,7 @@ function X_poly = poly3_features(input_data)
     c = input_data(:,3);
 
     X_poly = [ ...
-        % ones(size(a)), ...         
+        ones(size(a)), ...         
         a, b, c, ...
         a.^2, b.^2, c.^2, ...
         a.*b, a.*c, b.*c, ...
