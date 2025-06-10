@@ -148,6 +148,8 @@ end
 
 %%
 
+save_folder = '/home/oem/eliza/mac-shared'; 
+[~, img_name, ~] = fileparts(img_path1);
 
 % Load CIE and D65 data
 cmf = importdata('../../../data/CIE2degCMFs_1931.txt');
@@ -156,24 +158,6 @@ cmf_interp = interp1(cmf(:,1), cmf(:,2:4), wl1, 'linear', 'extrap');
 ill_interp = interp1(ill(:,1), ill(:,2), wl1, 'linear', 'extrap')';
 
 nColors = size(meanSpectra1, 1);
-
-% Find white point (Y=100 for Lab conversion)
-white_refl = ones(1, numel(wl1));
-white_xyz = (white_refl .* ill_interp) * cmf_interp;
-white_xyz = white_xyz / sum(ill_interp .* cmf_interp(:,2)');
-
-% Compute XYZ for both
-XYZs1 = (meanSpectra1 .* ill_interp) * cmf_interp;
-XYZs2 = (meanSpectra2 .* ill_interp) * cmf_interp;
-XYZs1 = XYZs1 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
-XYZs2 = XYZs2 ./ sum(ill_interp .* cmf_interp(:,2)', 2);
-
-% Scale for Lab conversion
-XYZs1_scaled = XYZs1 * (100 / white_xyz(2));
-XYZs2_scaled = XYZs2 * (100 / white_xyz(2));
-
-Lab1 = xyz2lab(XYZs1_scaled, 'WhitePoint', 'd65');
-Lab2 = xyz2lab(XYZs2_scaled, 'WhitePoint', 'd65');
 
 
 % Calculate XYZ for all pixels
@@ -184,13 +168,13 @@ XYZ2 = ref2xyz(ill_interp(:), cmf_interp, meanSpectra2);
 Lab1 = xyz2lab(XYZ1);
 Lab2 = xyz2lab(XYZ2);
 
+XYZ1_norm = XYZ1 ./ 100;
+XYZ2_norm = XYZ2 ./ 100;
 
-% sRGB conversion for display
-% RGBs1 = max(0, min(1, xyz2rgb(XYZs1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
-% RGBs2 = max(0, min(1, xyz2rgb(XYZs2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
-RGBs1 = max(0, min(1, xyz2rgb(XYZ1, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
-RGBs2 = max(0, min(1, xyz2rgb(XYZ2, 'ColorSpace','prophoto-rgb', 'WhitePoint','d50')));
+RGBs1 = max(0, min(1, xyz2prophoto(XYZ1_norm, true)));
+RGBs2 = max(0, min(1, xyz2prophoto(XYZ2_norm, true)));
 
+%%
 
 % Compute chroma from Lab2 (use after, but you can use before if you prefer)
 Chroma = sqrt(Lab1(:,2).^2 + Lab1(:,3).^2);

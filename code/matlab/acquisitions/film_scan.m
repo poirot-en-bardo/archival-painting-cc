@@ -1,4 +1,4 @@
-rootFolder = '/home/oem/eliza/data/film_scans/underexp/';
+rootFolder = '/home/oem/eliza/data/to_register/yoda';
 outputDir  = '/home/oem/eliza/mac-shared/film_scans';
 led_path = '../../../data/film/CVCL10bands.txt';
 cmf_path = '../../../data/CIE2degCMFs_full.csv';
