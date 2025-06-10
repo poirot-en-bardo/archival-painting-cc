@@ -1,4 +1,3 @@
-%% Full Script: Pseudoinverse for 3rd Degree Polynomial Regression Minimizing ΔE2000
 clc; clear; close all;
 roof = double(intmax('uint16'));
 
@@ -48,7 +47,7 @@ xyz_ref = (lincube_ref * sp_tristREF) ./ sum(sp_tristREF(:,2), 1);
 %% Train-test split (80% training, 20% testing)
 num_samples = size(xyz_input, 1);
 perm = randperm(num_samples);
-train_idx = perm(1:round(0.8*num_samples));
+train_idx = perm(1:round(0.8*num_samples)); 
 test_idx  = perm(round(0.8*num_samples)+1:end);
 
 xyz_input_train = xyz_input(train_idx, :);

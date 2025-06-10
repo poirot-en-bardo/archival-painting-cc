@@ -1,4 +1,3 @@
-%% Full Script: Cross-Validated Pseudoinverse for 3rd Degree Polynomial Regression Minimizing ΔE2000
 clc; clear; close all;
 roof = double(intmax('uint16'));
 
@@ -43,7 +42,7 @@ sp_tristREF = CMFsIP .* illIP;
 xyz_ref = (lincube_ref * sp_tristREF) ./ sum(sp_tristREF(:,2), 1);
 
 %% ----------------- Cross-Validation -----------------
-K = 5;
+K = 6;
 num_samples = size(xyz_input, 1);
 cv = cvpartition(num_samples, 'KFold', K);
 
@@ -69,8 +68,10 @@ max_errors_labFromRGB = zeros(K, 1);
 
 for k = 1:K
     fprintf('Fold %d of %d\n', k, K);
-    train_idx = training(cv, k);
-    test_idx  = test(cv, k);
+    num_samples = size(xyz_input, 1);
+    perm = randperm(num_samples);
+    train_idx = perm(1:round(0.8 * num_samples));
+    test_idx = perm(round(0.8 * num_samples) + 1:end);
 
      %% XYZ Regression
     X_poly_xyz_train = poly3_features(xyz_input(train_idx, :));
@@ -146,7 +147,7 @@ function [mean_deltaE, max_deltaE] = evaluate_error(ref_lab, corrected_lab, test
     imagesc(error_map);
     colormap(jet);
     colorbar;
-    clim([0 10]);  % Set the color axis limits for clarity
+    clim([0 5]);  % Set the color axis limits for clarity
     title([space ' ΔE2000', ' (Mean: ', num2str(mean_deltaE, '%.2f'), ', Max: ', ...
         num2str(max_deltaE, '%.2f'), ')'], Interpreter="none");
     grid off;
