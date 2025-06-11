@@ -72,7 +72,7 @@ for i = 1:length(folders)
     figure; imagesc(mat2gray(XYZ_img)); axis image; title('XYZ Image Preview');
     figure; imagesc(mat2gray(RGB_img)); axis image; title('RGB Image Preview');
 
-    save_name = sprintf('%s_data_%d', folders(i).name, cube_idx);
+    save_name = sprintf('%s_data2_%d', folders(i).name, cube_idx);
     save(fullfile(outFolder, [save_name '.mat']), 'XYZ_img', 'Lab_img', 'RGB_img');
     cube_idx = cube_idx + 1;
 end
