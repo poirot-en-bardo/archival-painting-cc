@@ -217,6 +217,7 @@ save(fullfile(mov_out_dir, [mov_name '_and_' ref_name '_registered.mat']), ...
 figure; 
 subplot(1,3,1); imshow(mov_rgb_wb); title('Moving (Film)');
 subplot(1,3,2); imshow(ref_img); title('Reference (Scan)');
+%%
 subplot(1,3,3); imshowpair(reg_prophoto, ref_prophoto); title('Overlay Registered');
 
 
