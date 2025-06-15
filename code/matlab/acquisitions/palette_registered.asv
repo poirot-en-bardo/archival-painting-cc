@@ -280,18 +280,18 @@ Lab_before = xyz2lab(xyz_before);
 Lab_after  = xyz2lab(xyz_after);
 
 % ΔE between before and after for each patch
-deltaE = deltaE2000(Lab_before, Lab_after);
+deltae = deltaE2000(Lab_before, Lab_after);
 
 %%
-save_path = fullfile(save_folder, ['palette_' img_name '.mat']);
-
+save_path = '/home/oem/eliza/mac-shared/paletteyoda_palette_patch_data.mat';
 
 save(save_path, ...
     'mean_spectra_before', ...
     'mean_spectra_after', ...
     'xyz_before', ...
     'xyz_after', ...
-    'deltaE', ...
+    'deltae_before', ...
+    'deltae_after', ...
     '-v7.3');
 
 fprintf('Saved palette patch data to: %s\n', save_path);
@@ -428,10 +428,10 @@ img2_uint16 = uint16(round(img2 * 65535));
 img_diag_uint16 = uint16(round(img_diag * 65535));
 
 % Specify your save folder and file names
-saveProPhotoTIFF(img1_uint16,   fullfile(save_folder, [img_name '_palette_before.tif']));
-saveProPhotoTIFF(img2_uint16,   fullfile(save_folder, [img_name '_palette_after.tif']));
-saveProPhotoTIFF(img_diag_uint16, fullfile(save_folder, [img_name '_palette_diag.tif']));
 
+saveProPhotoTIFF(img1_uint16, fullfile(saveFolder, 'yoda_palette_before.tif'));
+saveProPhotoTIFF(img2_uint16, fullfile(saveFolder, 'yoda_palette_after.tif'));
+saveProPhotoTIFF(img_diag_uint16, fullfile(saveFolder, 'cactus_palette_diag.tif'));
 
 %%
 figure; imshow(img1); title('Palette Yoda (Before)');
@@ -551,6 +551,3 @@ end
 %
 figure; imshow(img1); title('Palette from Cube 1 (Before)');
 figure; imshow(img2); title('Palette from Cube 2 (After)');
-
-%%
-%Checking

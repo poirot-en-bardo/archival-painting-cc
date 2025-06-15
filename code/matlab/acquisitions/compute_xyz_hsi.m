@@ -1,7 +1,7 @@
 % Hyperspectral XYZ/Lab/RGB computation pipeline
 clear; close all;
-parent_folder = "/home/oem/eliza/data/to_register/yoda";
-outFolder = '/home/oem/eliza/mac-shared/registered_hyper';
+parent_folder = "/home/oem/eliza/data/to_register/cactus";
+outFolder = '/home/oem/eliza/mac-shared/registered_hyper/full';
 if ~exist(outFolder, 'dir')
     mkdir(outFolder);
 end
