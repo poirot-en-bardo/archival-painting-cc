@@ -20,7 +20,7 @@ function XYZ=lab2xyz(Lab,XYZn)
 
 if nargin>1
    rwhite=XYZn;
-else rwhite=d(50);
+else rwhite=[96.4212 100.0000 82.5188];
 end
 
 % set knee point of function

@@ -18,7 +18,7 @@ spectralon = S.data(:,1:2);
 % ylim([0.5 1]);
 
 %% Load spectralon scan
-spectralon_hdr = "/home/oem/eliza/data/radiance_after/yoda/spectralon_halogen_001_VNIR_1800_SN00841_HSNR1_13998us_2025-05-22T160312_raw_rad_float32.hdr";
+spectralon_hdr = "/home/oem/eliza/data/radiance_before/spectralonPOS_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T110223_raw_rad_float32.hdr";
 
 
 sp_scan = hypercube(spectralon_hdr);
@@ -41,7 +41,7 @@ sp_cube = sp_cube(:,:,mask_wl);  % H×W×nBands
 
 
 %% Load scan of the cardboard from the same position as the spectralon
-board_sp_hdr = "/home/oem/eliza/data/radiance_after/yoda/whiteboard_spectralon_pos_001_VNIR_1800_SN00841_HSNR1_13998us_2025-05-22T162715_raw_rad_float32.hdr";
+board_sp_hdr = "/home/oem/eliza/data/radiance_before/whiteboardspectralonPOS_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T105329_raw_rad_float32.hdr";
 board_sp_scan = hypercube(board_sp_hdr);
 board_sp_cube = board_sp_scan.DataCube;
 
@@ -49,7 +49,7 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 
 %% Load cardboard scan
 
-board_hdr = "/home/oem/eliza/data/radiance_after/yoda/whiteboard_full_003_VNIR_1800_SN00841_HSNR1_13998us_2025-05-22T172236_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/radiance_before/whitetarget_LED_001_VNIR_1800_SN00841_HSNR1_94998us_2025-04-14T181533_raw_rad_float32.hdr";
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -66,7 +66,7 @@ board_cube = board_cube(:,:, mask_wl);
 
 %%
 
-painting_hdr = "/home/oem/eliza/data/radiance_after/yoda/yoda_halogen_003_VNIR_1800_SN00841_HSNR1_13998us_2025-05-22T180302_raw_rad_float32.hdr";
+painting_hdr = "/home/oem/eliza/data/rad_after/cactus_radiance/cactus_halogen_001_VNIR_1800_SN00841_HSNR1_13998us_2025-05-21T184221_raw_rad_float32.hdr";
 painting_scan = hypercube(painting_hdr);
 painting_cube = painting_scan.DataCube;
 
@@ -88,26 +88,26 @@ board_cube = board_cube(start_row:end_row,:,:);
 
 
 %% selection of rectangle from spectralon scan (visualizing one representative band)
-% sp_band_img = sp_cube(:,:,band_visual);
-% sp_band_img = double(sp_band_img);
-% threshold = 0.2;
-% sp_band_img(sp_band_img > threshold) = threshold;
-% 
-% figure; imshow(sp_band_img, []);
-% title('Select rectangle around Spectralon area and double click to confirm');
-% rect = round(getrect); % [xmin, ymin, width, height]
-% 
-% % Validate rectangle coordinates
-% xmin = rect(1);
-% ymin = rect(2);
-% width = rect(3);
-% height = rect(4);
+sp_band_img = sp_cube(:,:,band_visual);
+sp_band_img = double(sp_band_img);
+threshold = 0.2;
+sp_band_img(sp_band_img > threshold) = threshold;
+
+figure; imshow(sp_band_img, []);
+title('Select rectangle around Spectralon area and double click to confirm');
+rect = round(getrect); % [xmin, ymin, width, height]
+
+% Validate rectangle coordinates
+xmin = rect(1);
+ymin = rect(2);
+width = rect(3);
+height = rect(4);
 
 % coordinates extracted earlier, for repeatability
-xmin = 180;
-ymin = 39;
-width = 1604;
-height = 511;
+% xmin = 196;
+% ymin = 132;
+% width = 1586;
+% height = 525;
 
 %% Apply the rectangle to crop the spectralon cube
 sp_crop = sp_cube(ymin:(ymin+height), xmin:(xmin+width), :);
@@ -134,12 +134,12 @@ figure;
 plot(wl, SPD, 'LineWidth', 2);
 xlabel('Wavelength (nm)', 'FontSize',14, 'FontWeight','bold');
 ylabel('Spectral Radiance (W·m^{-2}·sr^{-1}·nm^{-1})', 'FontSize',14, 'FontWeight','bold');
-title('Illumination Spectral Power Distribution', 'FontSize',16, 'FontWeight','bold');
+title('Halogen Spectral Power Distribution', 'FontSize',16, 'FontWeight','bold');
 
 ax = gca; 
 ax.FontSize = 12;              
 ax.LineWidth = 1.5;           
-ylim([0 0.12]);
+% ylim([0 0.12]);
 grid on;
 
 % Cardboard radiance plot
@@ -151,7 +151,7 @@ title('Cardboard Spectral Radiance', 'FontSize',16, 'FontWeight','bold');
 ax = gca; 
 ax.FontSize = 12;              
 ax.LineWidth = 1.5;            
-ylim([0 0.12]);
+% ylim([0 0.12]);
 grid on;
 
 %% Compute cardboard to spectralon scaling factor:
@@ -176,6 +176,44 @@ calibrated_board_cube = zeros(h,w,b);
 for i=1:b
     calibrated_board_cube(:,:,i) = board_cube(:,:,i) .* factor_pos(i);
 end
+
+%%
+% pick a reference band to display (e.g. middle band)
+ref_band = round(size(calibrated_board_cube,3)/2);
+
+% show that slice so you can draw an ROI
+figure; 
+imagesc(calibrated_board_cube(:,:,ref_band)); 
+axis image off; 
+colormap gray;
+title('Draw ROI on calibrated board (double‐click to finish)','FontSize',14);
+
+% let user draw a rectangular ROI
+hROI = imrect;
+position = wait(hROI);   % [xmin, ymin, width, height]
+pos = round(position);
+
+% crop the cube over all bands
+roi_cube = calibrated_board_cube( ...
+    pos(2):(pos(2)+pos(4)-1), ...  % rows
+    pos(1):(pos(1)+pos(3)-1), ...  % cols
+    : );
+
+% average radiance over x and y in the ROI
+roi_mean = squeeze( mean( mean( roi_cube, 1 ), 2 ) );
+%%
+% plot the cropped‐ROI radiance vs. wavelength
+figure;
+plot(wl, roi_mean, 'LineWidth', 2);
+xlabel('Wavelength (nm)',       'FontSize',14, 'FontWeight','bold');
+ylabel('Spectral Radiance (W·m^{-2}·sr^{-1}·nm^{-1})','FontSize',14,'FontWeight','bold');
+title('LED Spectral Power Distribution','FontSize',16,'FontWeight','bold');
+
+ax = gca; 
+ax.FontSize   = 12;
+ax.LineWidth  = 1.5;
+grid on;
+
 
 %% Compute flat-fielding factor from calibrated cardboard
 
@@ -209,7 +247,7 @@ title('Painting Reflectance after Calibration and Flat-fielding');
 ref_painting1 = reflectance_painting_cube;
 ref_painting1(ref_painting1 > 1) = 1;
 
-%%
+
 figure;
 imshow(ref_painting1(:,:,band_no),[]);
 title(sprintf('Painting Reflectance - band %d', band_no));
@@ -234,8 +272,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'yoda_halogen_reflectance_right_after.img');
-hdrPath = fullfile(destFolder, 'yoda_halogen_reflectance_right_after.hdr');
+imgPath = fullfile(destFolder, 'cactus_reflectance_left_after.img');
+hdrPath = fullfile(destFolder, 'cactus_reflectance_left_after.hdr');
 
 
 % Write the multi‐band binary (.img) as single‐precision BSQ 

@@ -4,9 +4,9 @@
 clear; close all; clc;
 
 %% ——— 1) File paths & load hypercubes —————
-hdr1 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_left_after.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_mid_after.hdr";
-hdr3 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_right_after.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/after/cactus_reflectance_left_after.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/after/cactus_reflectance_mid_after.hdr";
+hdr3 = "/home/oem/eliza/data/processed/reflectance/after/cactus_reflectance_right_after.hdr";
 
 hc1 = hypercube(hdr1);   % moving image #1
 hc2 = hypercube(hdr2);   % fixed reference image
@@ -100,9 +100,12 @@ stitched_cube = zeros(outH, outW, nBands, 'single');
 
 for b = 1:nBands
     % Load and threshold each band
-    fixB = single(gather(hc2.DataCube(:,:,b))); fixB(fixB>threshold)=threshold;
-    mov1B= single(gather(hc1.DataCube(:,:,b))); mov1B(mov1B>threshold)=threshold;
-    mov3B= single(gather(hc3.DataCube(:,:,b))); mov3B(mov3B>threshold)=threshold;
+    fixB = single(gather(hc2.DataCube(:,:,b))); 
+    mov1B= single(gather(hc1.DataCube(:,:,b))); 
+    mov3B= single(gather(hc3.DataCube(:,:,b))); 
+    % fixB(fixB>threshold)=threshold;
+    % mov1B(mov1B>threshold)=threshold;
+    % mov3B(mov3B>threshold)=threshold;
 
     % Warp fixed (hc2) by identity
     wFix = imwarp(fixB, affine2d(eye(3)), 'OutputView', outputView);
@@ -125,15 +128,17 @@ end
 
 %% ——— 6) Visualize & save the result ———
 % Quick false-color preview:
-hc_stitched = hypercube(stitched_cube, wl);
-figure; imshow(colorize(hc_stitched, 'Method','RGB','ContrastStretching',true));
+stitched_cube2 = stitched_cube;
+stitched_cube2(stitched_cube2 > 1) = 1;
+stitched2 = hypercube(stitched_cube2, wl);  % Convert to a hypercube for visualization
+figure; imshow(colorize(stitched2, 'Method','RGB','ContrastStretching',true));
 title('Three-cube Stitched Hypercube');
-
+%%
 % Save as ENVI .img/.hdr
 destFolder = '../../../../data/processed/reflectance/after';
 if ~exist(destFolder,'dir'), mkdir(destFolder); end
-imgPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.img');
-hdrPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.hdr');
+imgPath = fullfile(destFolder,'cactus_reflectance_after_full.img');
+hdrPath = fullfile(destFolder,'cactus_reflectance_after_full.hdr');
 
 %%
 multibandwrite(stitched_cube, imgPath, 'bsq','Precision','single','Offset',0);

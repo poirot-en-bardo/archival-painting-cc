@@ -18,7 +18,7 @@ spectralon = S.data(:,1:2);
 % ylim([0.5 1]);
 
 %% Load spectralon scan
-spectralon_hdr = "/home/oem/eliza/data/radiance_interm/spectralon_halogen_001_VNIR_1800_SN00841_HSNR6_13998us_2025-05-21T174335_raw_rad_float32.hdr";
+spectralon_hdr = "/home/oem/eliza/data/rad_after/cactus_radiance/spectralon_halogen_001_VNIR_1800_SN00841_HSNR6_13998us_2025-05-21T174335_raw_rad_float32.hdr";
 
 
 sp_scan = hypercube(spectralon_hdr);
@@ -41,7 +41,7 @@ sp_cube = sp_cube(:,:,mask_wl);  % H×W×nBands
 
 
 %% Load scan of the cardboard from the same position as the spectralon
-board_sp_hdr = "/home/oem/eliza/data/radiance_interm/whiteboard_spectralon_halogen_001_VNIR_1800_SN00841_HSNR6_13998us_2025-05-21T174804_raw_rad_float32.hdr";
+board_sp_hdr = "/home/oem/eliza/data/rad_after/cactus_radiance/whiteboard_spectralon_halogen_001_VNIR_1800_SN00841_HSNR6_13998us_2025-05-21T174804_raw_rad_float32.hdr";
 board_sp_scan = hypercube(board_sp_hdr);
 board_sp_cube = board_sp_scan.DataCube;
 
@@ -49,7 +49,7 @@ board_sp_cube = board_sp_cube(:,:, mask_wl);
 
 %% Load cardboard scan
 
-board_hdr = "/home/oem/eliza/data/radiance_interm/whiteboard_full_halogen_002_VNIR_1800_SN00841_HSNR1_13998us_2025-05-21T182013_raw_rad_float32.hdr";
+board_hdr = "/home/oem/eliza/data/rad_after/cactus_radiance/whiteboard_full_halogen_001_VNIR_1800_SN00841_HSNR1_13998us_2025-05-21T181041_raw_rad_float32.hdr";
 board_scan = hypercube(board_hdr);
 board_cube = board_scan.DataCube;
 
@@ -66,8 +66,7 @@ board_cube = board_cube(:,:, mask_wl);
 
 %%
 
-% painting_hdr = "/home/oem/eliza/data/radiance/cactusHalogen_001_VNIR_1800_SN00841_HSNR1_24998us_2025-04-15T111238_raw_rad_float32.hdr";
-painting_hdr = "/home/oem/eliza/data/radiance_interm/cactus_halogen_002_VNIR_1800_SN00841_HSNR1_13998us_2025-05-21T185153_raw_rad_float32.hdr";
+painting_hdr = "/home/oem/eliza/data/rad_after/cactus_radiance/cactus_halogen_001_VNIR_1800_SN00841_HSNR1_13998us_2025-05-21T184221_raw_rad_float32.hdr";
 painting_scan = hypercube(painting_hdr);
 painting_cube = painting_scan.DataCube;
 
@@ -105,10 +104,10 @@ board_cube = board_cube(start_row:end_row,:,:);
 % height = rect(4);
 
 % coordinates extracted earlier, for repeatability
-xmin = 193;
-ymin = 131;
-width = 1590;
-height = 506;
+xmin = 196;
+ymin = 132;
+width = 1586;
+height = 525;
 
 %% Apply the rectangle to crop the spectralon cube
 sp_crop = sp_cube(ymin:(ymin+height), xmin:(xmin+width), :);
@@ -140,7 +139,7 @@ title('Illumination Spectral Power Distribution', 'FontSize',16, 'FontWeight','b
 ax = gca; 
 ax.FontSize = 12;              
 ax.LineWidth = 1.5;           
-ylim([0 0.12]);
+% ylim([0 0.12]);
 grid on;
 
 % Cardboard radiance plot
@@ -152,7 +151,7 @@ title('Cardboard Spectral Radiance', 'FontSize',16, 'FontWeight','bold');
 ax = gca; 
 ax.FontSize = 12;              
 ax.LineWidth = 1.5;            
-ylim([0 0.12]);
+% ylim([0 0.12]);
 grid on;
 
 %% Compute cardboard to spectralon scaling factor:
@@ -210,10 +209,10 @@ title('Painting Reflectance after Calibration and Flat-fielding');
 ref_painting1 = reflectance_painting_cube;
 ref_painting1(ref_painting1 > 1) = 1;
 
-%%
+
 figure;
 imshow(ref_painting1(:,:,band_no),[]);
-title(sprintf('Painting Reflectance Clipped - band %d', band_no));
+title(sprintf('Painting Reflectance - band %d', band_no));
 
 
 %% Masking
@@ -229,14 +228,14 @@ title(sprintf('Painting Reflectance Clipped - band %d', band_no));
 
 %% Saving the reflectance cube
 
-destFolder = '../../../../data/processed/reflectance/intermediary';  
+destFolder = '../../../../data/processed/reflectance/after';  
 if ~exist(destFolder,'dir')
     mkdir(destFolder);
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_mid_inter.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_mid_inter.hdr');
+imgPath = fullfile(destFolder, 'cactus_reflectance_left_after.img');
+hdrPath = fullfile(destFolder, 'cactus_reflectance_left_after.hdr');
 
 
 % Write the multi‐band binary (.img) as single‐precision BSQ 

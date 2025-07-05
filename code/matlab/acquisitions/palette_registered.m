@@ -94,12 +94,12 @@ title('After Automatic Registration');
 
 %% using already-registered cubes 
 
-img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/small/yoda_reg_before1.hdr';
-% img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr';
-% hcube1= hypercube(img_path1);
-% hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
-hcube1 = hypercube(img_path1);
-hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/small/yoda_reg_after1.hdr');
+% img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/small/yoda_reg_before1.hdr';
+img_path1 = '/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_before1.hdr';
+hcube1= hypercube(img_path1);
+hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/cactus_reg_after1.hdr');
+% hcube1 = hypercube(img_path1);
+% hcube2 = hypercube('/home/oem/eliza/data/processed/reflectance/registered/small/yoda_reg_after1.hdr');
 
 cube1_final = hcube1.DataCube;
 cube2_final = hcube2.DataCube;
@@ -133,7 +133,7 @@ mask_flat = mask(:);
 pixels1_masked = pixels1(mask_flat, :);
 pixels2_masked = pixels2(mask_flat, :);
 
-
+rng(42);
 nColors = 80;
 [cluster_idx, ~] = kmeans(pixels1_masked, nColors, 'Replicates', 5, 'MaxIter', 1000);
 
@@ -175,11 +175,16 @@ XYZ2_norm = XYZ2 ./ 100;
 RGBs1 = max(0, min(1, xyz2prophoto(XYZ1_norm, true)));
 RGBs2 = max(0, min(1, xyz2prophoto(XYZ2_norm, true)));
 
-%%
+Lab1_unsorted = Lab1;
+Lab2_unsorted = Lab2;
+RGBs1_unsorted = RGBs1;
+RGBs2_unsorted = RGBs2;
+
+%
 
 % Compute chroma from Lab2 (use after, but you can use before if you prefer)
 Chroma = sqrt(Lab1(:,2).^2 + Lab1(:,3).^2);
-achromaticThresh = 7;   % adjust
+achromaticThresh = 10;   % adjust
 isAchromatic = Chroma < achromaticThresh;
 
 achromaticIdx = find(isAchromatic);
@@ -188,7 +193,7 @@ chromaticIdx = find(~isAchromatic);
 % Cluster only chromatic (colored) patches
 nGroups = 3;
 if ~isempty(chromaticIdx)
-    [grp, C] = kmeans(Lab2(chromaticIdx,2:3), nGroups, 'Replicates', 10);
+    [grp, C] = kmeans(Lab1(chromaticIdx,2:3), nGroups, 'Replicates', 10);
 else
     grp = [];
 end
@@ -203,16 +208,19 @@ finalOrder = [finalOrder; achromaticIdx(achroOrd)];
 % 2. Each chromatic group, by lightness
 for g = 1:nGroups
     idx = chromaticIdx(grp==g);   % indices in original array
-    [~, ord] = sort(Lab1(idx,1), 'descend');
+    [~, ord] = sort(Lab2(idx,1), 'descend');
     finalOrder = [finalOrder; idx(ord)];
 end
 
+%
 
-% Reorder everything
-Lab1 = Lab1(finalOrder,:);
-Lab2 = Lab2(finalOrder,:);
-RGBs1 = RGBs1(finalOrder,:);
-RGBs2 = RGBs2(finalOrder,:);
+%
+% Now sort for display
+Lab1 = Lab1_unsorted(finalOrder,:);
+Lab2 = Lab2_unsorted(finalOrder,:);
+RGBs1 = RGBs1_unsorted(finalOrder,:);
+RGBs2 = RGBs2_unsorted(finalOrder,:);
+
 %
 % Palette grid display
 patchSize = 40;
@@ -264,8 +272,8 @@ save_path = fullfile(save_folder, ['deltaE_grid_' img_name '.png']);
 saveas(gcf, save_path);
 
 %% Save
-meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
-meanSpectra2 = meanSpectra2(finalOrder, :);
+% meanSpectra1 = meanSpectra1(finalOrder, :); %sorting
+% meanSpectra2 = meanSpectra2(finalOrder, :);
 % save('palette/palette_cactus_before1.mat', 'meanSpectra1', 'wl1');
 % save('palette/palette_cactus_after1.mat', 'meanSpectra2', 'wl2');
 
@@ -554,3 +562,75 @@ figure; imshow(img2); title('Palette from Cube 2 (After)');
 
 %%
 %Checking
+
+data = load('/home/oem/eliza/mac-shared/palette/palette_cactus_reg_before1.mat');
+RGB_before = max(0, min(1, xyz2rgb(data.xyz_before ./ 100, 'ColorSpace', 'srgb')));
+RGB_after  = max(0, min(1, xyz2rgb(data.xyz_after  ./ 100, 'ColorSpace', 'srgb')));
+nColors = size(RGB_before, 1);
+grid_w = 10;
+grid_h = nColors / grid_w;
+patchSize = 40;
+
+img_before = ones(grid_h * patchSize, grid_w * patchSize, 3);
+img_after  = ones(grid_h * patchSize, grid_w * patchSize, 3);
+
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    r_idx = (row*patchSize+1):((row+1)*patchSize);
+    c_idx = (col*patchSize+1):((col+1)*patchSize);
+    img_before(r_idx, c_idx, :) = repmat(reshape(RGB_before(k,:),1,1,3), patchSize, patchSize, 1);
+    img_after(r_idx, c_idx, :)  = repmat(reshape(RGB_after(k,:),1,1,3), patchSize, patchSize, 1);
+end
+
+deltaE = data.deltaE;
+dE_grid = zeros(grid_h, grid_w);
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    dE_grid(row, col) = deltaE(k);
+end
+
+figure('Position', [100 100 1800 600]);
+tiledlayout(1,3, 'Padding', 'compact', 'TileSpacing', 'compact');
+
+nexttile;
+imshow(img_before);
+title('Before RGB', 'FontWeight', 'bold', 'FontSize', 15);
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 12, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+
+nexttile;
+imshow(img_after);
+title('After RGB', 'FontWeight', 'bold', 'FontSize', 15);
+hold on;
+for k = 1:nColors
+    row = floor((k-1)/grid_w);
+    col = mod((k-1), grid_w);
+    xpos = col*patchSize + patchSize/2;
+    ypos = row*patchSize + patchSize/2;
+    text(xpos, ypos, num2str(k), 'Color', 'w', 'FontSize', 12, ...
+        'HorizontalAlignment','center', 'FontWeight','bold');
+end
+hold off;
+
+nexttile;
+imagesc(dE_grid);
+axis image off; colormap(jet(255)); colorbar; clim([0 10]);
+title('\DeltaE_{2000}', 'FontWeight', 'bold', 'FontSize', 15);
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    text(col, row, num2str(k), ...
+        'HorizontalAlignment','center', 'Color','w', 'FontSize',12, 'FontWeight','bold');
+end
+
+sgtitle('Loaded Palette Patch Order Check', 'FontWeight', 'bold', 'FontSize', 18);

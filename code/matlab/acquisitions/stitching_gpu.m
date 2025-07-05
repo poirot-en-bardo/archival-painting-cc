@@ -1,7 +1,7 @@
 clear; close all;
 %% File paths
-hdr1 = "/home/oem/eliza/data/processed/reflectance/before/scans/cactus_halogen_reflectance_left.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/before/scans/cactus_halogen_reflectance_right.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/before/yoda_reflectance_left_before.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/before/yoda_reflectance_right_before.hdr";
 
 %% ——— 1) Load cubes via hypercube (all on CPU) —————
 hc1 = hypercube(hdr1);
@@ -16,7 +16,7 @@ nBands    = numel(bands);
 
 %% ——— 3) Perform Registration Estimation on a Single Band ———
 % Select the band for registration (e.g., midband)
-refBand = 80; 
+refBand = 100; 
 
 % Extract the band for registration
 movRefBand = gather(hc1.DataCube(:,:,refBand)); 
@@ -62,7 +62,7 @@ ptsMoving = detectSIFTFeatures(movRefContrast);
 
 % 3d) Match features with ratio test
 idxPairs = matchFeatures(featFixed, featMoving, ...
-                         'MaxRatio',0.8, 'MatchThreshold', 2, 'Unique',true);
+                         'MaxRatio',0.8, 'MatchThreshold', 1, 'Unique',true);
 
 matchedFixed  = validFixed(idxPairs(:,1));
 matchedMoving = validMoving(idxPairs(:,2));
@@ -71,8 +71,8 @@ matchedMoving = validMoving(idxPairs(:,2));
 [tformObj, inlierIdx] = estimateGeometricTransform2D( ...
     matchedMoving, matchedFixed, ...   % map moving → fixed
     'affine', ...
-    'MaxDistance',1.5, ...
-    'Confidence',99.9, ...
+    'MaxDistance',1.8, ...
+    'Confidence',98, ...
     'MaxNumTrials',2000);
 
 % 3f) Define the fixed‐image spatial reference
@@ -108,8 +108,8 @@ for bandIdx = 1:nBands
     fixRefBand = double(fixRefBand);
 
     % Clip values above a certain threshold
-    fixRefBand(fixRefBand > threshold) = threshold;
-    movRefBand(movRefBand > threshold) = threshold;
+    % fixRefBand(fixRefBand > threshold) = threshold;
+    % movRefBand(movRefBand > threshold) = threshold;
 
     % Warp the images for this band
     g1 = gpuArray(single(movRefBand));
@@ -158,7 +158,9 @@ end
 % title('Stitched Reflectance Hypercube - False RGB', 'FontSize', 20);
 
 %%
-stitched2 = hypercube(stitched_cube, wl);  % Convert to a hypercube for visualization
+stitched_cube2 = stitched_cube;
+stitched_cube2(stitched_cube2 > 1) = 1;
+stitched2 = hypercube(stitched_cube2, wl);  % Convert to a hypercube for visualization
 rgbVis2 = colorize(stitched2, 'Method', 'RGB', 'ContrastStretching', true);
 %
 % Visualize the final result
@@ -174,8 +176,8 @@ if ~exist(destFolder,'dir')
 end
 
 % build full filenames
-imgPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.img');
-hdrPath = fullfile(destFolder, 'cactus_halogen_reflectance_full.hdr');
+imgPath = fullfile(destFolder, 'yoda_reflectance_full_before.img');
+hdrPath = fullfile(destFolder, 'yoda_reflectance_full_before.hdr');
 
 [rows, cols, bands] = size(stitched_cube);
 

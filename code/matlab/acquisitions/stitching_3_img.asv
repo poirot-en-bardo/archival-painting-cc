@@ -4,9 +4,9 @@
 clear; close all; clc;
 
 %% ——— 1) File paths & load hypercubes —————
-hdr1 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_left_after.hdr";
-hdr2 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_mid_after.hdr";
-hdr3 = "/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_right_after.hdr";
+hdr1 = "/home/oem/eliza/data/processed/reflectance/after/yoda_reflectance_left_after.hdr";
+hdr2 = "/home/oem/eliza/data/processed/reflectance/after/yoda_reflectance_mid_after.hdr";
+hdr3 = "/home/oem/eliza/data/processed/reflectance/after/yoda_reflectance_right_after.hdr";
 
 hc1 = hypercube(hdr1);   % moving image #1
 hc2 = hypercube(hdr2);   % fixed reference image
@@ -51,7 +51,7 @@ matchedMov1   = validMov1(idx12(:,2));
     'MaxDistance',1.5,'Confidence',99.9,'MaxNumTrials',2000);
 
 % Match & estimate transformation for hc3 → hc2
-idx32 = matchFeatures(featFix, featMov3, 'MaxRatio', 0.15, 'MatchThreshold', 1., 'Unique',true);
+idx32 = matchFeatures(featFix, featMov3, 'MaxRatio', 0.15, 'MatchThreshold', 2, 'Unique',true);
 matchedFix32  = validFix(idx32(:,1));
 matchedMov3   = validMov3(idx32(:,2));
 [tform32,~] = estimateGeometricTransform2D(...
@@ -125,15 +125,18 @@ end
 
 %% ——— 6) Visualize & save the result ———
 % Quick false-color preview:
-hc_stitched = hypercube(stitched_cube, wl);
+stitched_cube2 = stitched_cube;
+stitched_cube2(stitched_cube2 > 1) = 1;
+stitched2 = hypercube(stitched_cube2, wl);  % Convert to a hypercube for visualization
+hc_stitched = hypercube(stitched2, wl);
 figure; imshow(colorize(hc_stitched, 'Method','RGB','ContrastStretching',true));
 title('Three-cube Stitched Hypercube');
-
+%%
 % Save as ENVI .img/.hdr
 destFolder = '../../../../data/processed/reflectance/after';
 if ~exist(destFolder,'dir'), mkdir(destFolder); end
-imgPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.img');
-hdrPath = fullfile(destFolder,'yoda_halogen_reflectance_after_full.hdr');
+imgPath = fullfile(destFolder,'yoda_reflectance_after_full.img');
+hdrPath = fullfile(destFolder,'yoda_reflectance_after_full.hdr');
 
 %%
 multibandwrite(stitched_cube, imgPath, 'bsq','Precision','single','Offset',0);
