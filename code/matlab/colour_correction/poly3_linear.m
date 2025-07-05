@@ -87,10 +87,9 @@ for k = 1:length(cube_files_struct)
     corrected_lab = X_poly_lab * coeffs_lab;
 
     % RGB Regression (linear RGB)
-    rgb_input_srgb = xyz2rgb(xyz_input ./100, 'ColorSpace', 'srgb');
-    rgb_ref_srgb   = xyz2rgb(xyz_ref ./100,   'ColorSpace', 'srgb');
-    rgb_input = srgb2linear(rgb_input_srgb);
-    rgb_ref   = srgb2linear(rgb_ref_srgb);
+    rgb_input = xyz2rgb(xyz_input ./100, 'ColorSpace', 'linear-rgb', 'WhitePoint', 'd50');
+    rgb_ref   = xyz2rgb(xyz_ref ./100,   'ColorSpace', 'linear-rgb', 'WhitePoint', 'd50');
+
 
     rgb_input_train = rgb_input(train_idx, :);
     rgb_ref_train   = rgb_ref(train_idx, :);
