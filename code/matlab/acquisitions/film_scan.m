@@ -79,7 +79,7 @@ for i = 1:numel(allChildren)
     XYZimg   = reshape(XYZ, H, W, 3);
 
     RGB_pPhoto = xyz2rgb(XYZimg, 'ColorSpace', 'prophoto-rgb', 'WhitePoint','d50');
-    RGB_linear = xyz2rgb(XYZimg, 'ColorSpace', 'linear-rgb', 'WhitePoint','d65');
+    RGB_linear = xyz2rgb(XYZimg, 'ColorSpace', 'linear-rgb', 'WhitePoint','d50');
 
 
     %% White balancing based on CC white patch

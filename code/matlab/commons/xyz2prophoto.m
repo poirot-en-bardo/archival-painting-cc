@@ -1,43 +1,31 @@
 function RGB = xyz2prophoto(XYZ, applyGamma)
-% xyz2prophoto  Convert CIE XYZ (D50) to ROMM RGB (ProPhoto RGB)
-%
-%   RGB = xyz2prophoto(XYZ)               % linear ROMM RGB
-%   RGB = xyz2prophoto(XYZ, true)         % ROMM RGB with spec-gamma
-%
-%   XYZ : Nx3 matrix of CIE 1931 XYZ values referenced to D50
-%   applyGamma : logical flag – if true, apply ROMM RGB transfer curve
-%   RGB : Nx3 matrix of ROMM RGB values (float, 0–1 after clipping)
-%
-%   Specification reference:
-%   “Specification of ROMM RGB”, https://www.color.org/chardata/rgb/rommrgb.xalter 
-
-
-
     arguments
         XYZ (:,3) double
         applyGamma (1,1) logical = true
     end
 
-    % ——— 1. XYZ → linear ROMM RGB ———
-    M = [  1.3460,  -0.2556,  -0.0511;
-          -0.5446,   1.5082,   0.0205;
-           0.0000,   0.0000,   1.2123 ];
-    RGB = (XYZ * M.').';           % column-vector multiply
-    RGB = max(0, RGB).';           % clamp negatives (optional)
-    RGB = RGB.';                   % back to Nx3
+    % 1) Linear ROMM-RGB
+    M = [ 1.3460, -0.2556, -0.0511;
+         -0.5446,  1.5082,  0.0205;
+          0.0000,  0.0000,  1.2123 ];
+    % simple N×3 → N×3 multiply
+    RGB = XYZ * M.';
 
-    % ——— 2. Apply ROMM RGB transfer curve if requested ———
+    % clamp negatives
+    RGB = max(RGB, 0);
+
+    % 2) Specular-gamma / toe if requested
     if applyGamma
-        Et     = 1/512;     % breakpoint 0.001953 125
-        slope  = 16;        % linear toe multiplier
-        gamma  = 1.8;
+        Et    = 1/512;
+        slope = 16;
+        gamma = 1.8;
 
-        % Vectorised piece-wise operation
-        linMask          = RGB <  Et;
-        RGB(linMask)     = RGB(linMask) * slope;
-        RGB(~linMask)    = RGB(~linMask).^(1/gamma);
+        % apply piecewise
+        mask = RGB < Et;
+        RGB(mask)    = RGB(mask) * slope;
+        RGB(~mask)   = RGB(~mask).^(1/gamma);
     end
 
-    % ——— 3. Clip to in-gamut display range ———
-    RGB = min(1, RGB);      % upper clip (leave lower at 0)
+    % 3) Clip to [0,1]
+    RGB = min(RGB, 1);
 end
