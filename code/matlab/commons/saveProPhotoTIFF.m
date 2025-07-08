@@ -8,7 +8,8 @@ function saveProPhotoTIFF(rgbImg, outFile)
     % convert to 16-bit
     img16 = im2uint16(rgbImg);
 
-    iccPath = '../../../data/icc/ROMM_RGB.icc';
+    % iccPath = '../../../data/icc/ROMM_RGB.icc';
+    iccPath = '/Volumes/School/Thesis/data/icc/ROMM_RGB.icc';
 
 
     % read ICC profile bytes
