@@ -48,4 +48,4 @@ outputDir = '/home/oem/eliza/mac-shared/colorchecker';
 save_name = fullfile(outputDir, [name '_colorchecker.mat']);
 save(save_name, 'patchRGB', 'patchXYZ', 'patchLab', 'positions');
 
-fprintf('✅ Saved color checker patch data to: %s\n', save_name);
+fprintf('Saved color checker patch data to: %s\n', save_name);
