@@ -198,7 +198,7 @@ title('Registered Moving Cube — False-RGB','FontSize',16);
 
 % 1) Load your registered hypercube and pull the data
 clear;
-hc   = hypercube("/home/oem/eliza/data/processed/reflectance/registered/cactus_reflectance_after_reg.hdr");
+hc   = hypercube("/home/oem/eliza/data/reflectance/registered/cubes/cactus_reflectance_full_before.hdr");
 data_cube  = gather(hc.DataCube);   % [rows × cols × bands]
 wl = hc.Wavelength;
 
@@ -231,7 +231,7 @@ end
 
 %%
 % 2) Choose your specularity threshold
-thresh = 0.7;
+thresh = 0.55;
 
 % 3) Build the 2-D mask: true where every band ≥ thresh
 spec_mask = all(data_cube >= thresh, 3);   % [rows × cols] logical
@@ -242,9 +242,50 @@ spec_mask = all(data_cube >= thresh, 3);   % [rows × cols] logical
 % 5) Visualize it
 figure;
 imshow(spec_mask);
-title(sprintf('Specularity Mask (reflectance ≥ %.2f in all bands)', thresh), 'FontSize',14);
+title(sprintf('Specularity Mask Cactus Before Ageing', thresh), 'FontSize',14);
 colormap gray; axis image off;
 %%
 data_cube(data_cube>1) = 1;
-outMat = "/home/oem/eliza/data/processed/reflectance/registered/cactus_reflectance_after_reg.mat";
+outMat = "/home/oem/eliza/data/reflectance/registered/cactus_reflectance_before.mat";
 save(outMat, 'data_cube', 'wl', 'spec_mask', '-v7.3');
+
+
+%% Fast sRGB computation from reflectance hypercube
+fprintf('--- Computing sRGB from hyperspectral data ---\n');
+
+% Load CIE 1931 2-deg CMFs and D50 illuminant
+cmf_path = '../../../data/CIE2degCMFs_full.csv';  % Wavelength in col 1, x y z in 2:4
+D50_path = '../../../data/CIE_D50.txt';           % Wavelength in col 1, SPD in col 2
+
+cmf_data = importdata(cmf_path);
+D50_data = importdata(D50_path);
+
+cmf_wl = cmf_data(:,1);
+cmf_vals = cmf_data(:,2:4);  % x̄, ȳ, z̄
+D50_wl = D50_data(:,1);
+D50_vals = D50_data(:,2);    % Spectral power distribution
+
+% Interpolate CMFs and illuminant to match your wavelengths
+cmf_interp = interp1(cmf_wl, cmf_vals, wl, 'linear', 'extrap');     % [#bands × 3]
+D50_interp = interp1(D50_wl, D50_vals, wl, 'linear', 'extrap');     % [#bands × 1]
+
+% Reshape hyperspectral cube to 2D [N_pixels × bands]
+[H, W, B] = size(data_cube);
+refl_2d = reshape(data_cube, [], B);
+
+% Compute XYZ tristimulus values
+XYZ = ref2xyz(D50_interp(:), cmf_interp, refl_2d);  % [N_pixels × 3]
+
+% Convert XYZ to sRGB (D65 adaptation assumed)
+RGB = xyz2rgb(XYZ./100, 'ColorSpace', 'srgb', ...
+                    'WhitePoint', 'd50', ...
+                    'OutputType', 'double');
+% Reshape back to image
+RGB_img = reshape(RGB, H, W, 3);
+RGB_img = min(max(RGB_img, 0), 1);  % Clip for display
+
+% Show the sRGB image
+figure;
+imshow(RGB_img);
+title('sRGB Image from Hyperspectral Cube');
+
