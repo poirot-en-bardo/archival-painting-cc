@@ -7,9 +7,9 @@ ill       = importdata('../../../data/CIE_D50.txt');
 CMFs      = importdata('../../../data/CIE2degCMFs_1931.txt');
 S         = load(inputFile);
 
-RGB_lin_input = S.patchRGB;
+RGB_input = S.patchRGB;  % <-- gamma-encoded RGB (as required)
 
-%% Load spectral reference and compute Lab
+%% Load spectral reference and compute XYZ
 refData     = readmatrix(refFile, 'NumHeaderLines', 1);  
 ref_wl      = refData(:,1);  
 ref_spectra = refData(:,2:end);  
@@ -22,11 +22,11 @@ illIP   = interp1(ill(:,1), ill(:,2), ref_wl, 'spline');
 CMFsIP  = interp1(CMFs(:,1), CMFs(:,2:4), ref_wl, 'spline');  % x̄ ȳ z̄
 sp_tristREF = CMFsIP .* illIP;
 k            = 100 / sum(sp_tristREF(:,2));
-XYZ_ref      = k * (ref_spectra' * sp_tristREF);
-Lab_ref      = xyz2lab_custom(XYZ_ref);  % <--- regression target is Lab!
+XYZ_ref      = k * (ref_spectra' * sp_tristREF);  % ← regression target
+Lab_ref      = xyz2lab_custom(XYZ_ref);           % ← for ΔE evaluation
 
-%% Root-polynomial regression (RGB_lin → Lab_ref)
-N = size(RGB_lin_input, 1);
+%% Root-polynomial regression (RGB → XYZ)
+N = size(RGB_input, 1);
 K = 6;
 rng(42);
 cv = cvpartition(N, 'KFold', K);
@@ -39,23 +39,26 @@ for k = 1:K
     train_idx = training(cv, k);
     test_idx  = test(cv, k);
 
-    X_train = root_poly_features(RGB_lin_input(train_idx, :));
-    Y_train = Lab_ref(train_idx, :);
+    X_train = root_poly_features(RGB_input(train_idx, :));
+    Y_train = XYZ_ref(train_idx, :);  % ← predict XYZ, not Lab
 
     % Ridge regression
     coeffs = (X_train' * X_train + lambda * eye(size(X_train,2))) \ (X_train' * Y_train);
 
-    % Apply model
-    X_all  = root_poly_features(RGB_lin_input);
-    Lab_pred = X_all * coeffs;
+    % Predict on full dataset
+    X_all   = root_poly_features(RGB_input);
+    XYZ_pred = X_all * coeffs;
 
-    deltaE = deltaE2000(Lab_pred, Lab_ref);
+    % Convert predicted XYZ to Lab for error analysis
+    Lab_pred = xyz2lab_custom(XYZ_pred);
+    deltaE   = deltaE2000(Lab_pred, Lab_ref);
+
     mean_de(k) = mean(deltaE(test_idx));
     max_de(k)  = max(deltaE(test_idx));
 end
 
 %% Results
-fprintf('\n---- Finlayson Root-Polynomial (RGB_lin → Lab) ----\n');
+fprintf('\n---- Finlayson Root-Polynomial (RGB → XYZ → Lab) ----\n');
 fprintf('λ = %.4f\n', lambda);
 fprintf('ΔE2000 Mean = %.2f ± %.2f | Max = %.2f ± %.2f\n', ...
     mean(mean_de), std(mean_de), ...
@@ -63,6 +66,7 @@ fprintf('ΔE2000 Mean = %.2f ± %.2f | Max = %.2f ± %.2f\n', ...
 
 %% --- Root-polynomial feature expansion
 function X_rootpoly = root_poly_features(RGB)
+    % RGB = normalize(RGB, 'range');  % Normalize to [0,1]
     R = max(RGB(:,1), 0);
     G = max(RGB(:,2), 0);
     B = max(RGB(:,3), 0);
