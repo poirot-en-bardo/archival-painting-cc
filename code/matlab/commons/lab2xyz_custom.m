@@ -1,4 +1,4 @@
-function XYZ=lab2xyz(Lab,XYZn)
+function XYZ=lab2xyz_custom(Lab,XYZn)
 
 % Lab2XYZ: Inverts the calculation of CIELAB L*a*b* 
 % to find tristimulus XYZ from L*a*b* using the equation in

@@ -80,10 +80,8 @@ corrected_lab = X_poly_lab * coeffs_lab;
 
 %% ----------------- RGB-Based Regression  -----------------
 % Convert input and reference XYZ to RGB (using prophoto-rgb)
-% rgb_input = xyz2rgb(xyz_input , 'ColorSpace', 'prophoto-rgb', 'WhitePoint','d50');
-% rgb_ref   = xyz2rgb(xyz_ref ,   'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
-rgb_input = xyz2prophoto(xyz_input, true);
-rgb_ref = xyz2prophoto(xyz_ref, true);
+rgb_input = xyz2rgb(xyz_input , 'ColorSpace', 'prophoto-rgb', 'WhitePoint','d50');
+rgb_ref   = xyz2rgb(xyz_ref ,   'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
 
 rgb_input_train = rgb_input(train_idx, :);
 rgb_ref_train   = rgb_ref(train_idx, :);
@@ -102,8 +100,7 @@ corrected_rgb = X_poly_rgb * coeffs_rgb;
 %% ----------------- Evaluate & Display Results -----------------
 % Convert corrected outputs to Lab for error evaluation
 lab_from_xyz_cor = xyz2lab_custom(corrected_xyz);
-% corrected_xyz_from_rgb = rgb2xyz(corrected_rgb, 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
-corrected_xyz_from_rgb = prophoto2xyz(corrected_rgb, true);
+corrected_xyz_from_rgb = rgb2xyz(corrected_rgb, 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50');
 lab_from_rgb_cor = xyz2lab_custom(corrected_xyz_from_rgb);
 
 output_folder = '../../../results/error_maps';
@@ -126,9 +123,7 @@ XYZ_ref_img      = reshape(xyz_ref,     m, n, 3);
 XYZ_input_img    = reshape(xyz_input,   m, n, 3);
 XYZ_corr_img_xyz = reshape(corrected_xyz, m, n, 3);
 XYZ_corr_img_lab = reshape(lab2xyz_custom(reshape(corrected_lab, m*n, 3)), m, n, 3);
-% XYZ_corr_img_rgb = reshape(rgb2xyz(reshape(corrected_rgb, m*n, 3), 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50'), m, n, 3);
-XYZ_corr_img_rgb = reshape(prophoto2xyz(reshape(corrected_rgb, [], 3), true), m, n, 3);
-
+XYZ_corr_img_rgb = reshape(rgb2xyz(reshape(corrected_rgb, m*n, 3), 'ColorSpace', 'prophoto-rgb', 'WhitePoint', 'd50'), m, n, 3);
 
 % Convert to sRGB
 sRGB_ref      = xyz2rgb(XYZ_ref_img,      'ColorSpace', 'srgb', 'WhitePoint', 'd50');
@@ -136,8 +131,6 @@ sRGB_input    = xyz2rgb(XYZ_input_img,    'ColorSpace', 'srgb', 'WhitePoint', 'd
 sRGB_xyz_corr = xyz2rgb(XYZ_corr_img_xyz, 'ColorSpace', 'srgb', 'WhitePoint', 'd50');
 sRGB_lab_corr = xyz2rgb(XYZ_corr_img_lab, 'ColorSpace', 'srgb', 'WhitePoint', 'd50');
 sRGB_rgb_corr = xyz2rgb(XYZ_corr_img_rgb, 'ColorSpace', 'srgb', 'WhitePoint', 'd50');
-
-
 
 % Clip to valid range
 sRGB_ref      = min(max(sRGB_ref, 0), 1);

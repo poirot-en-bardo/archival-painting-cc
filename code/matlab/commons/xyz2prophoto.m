@@ -1,31 +1,46 @@
 function RGB = xyz2prophoto(XYZ, applyGamma)
     arguments
-        XYZ (:,3) double
+        XYZ {mustBeNumeric}
         applyGamma (1,1) logical = true
     end
 
-    % 1) Linear ROMM-RGB
-    M = [ 1.3460, -0.2556, -0.0511;
-         -0.5446,  1.5082,  0.0205;
-          0.0000,  0.0000,  1.2123 ];
-    % simple N×3 → N×3 multiply
+    original_shape = size(XYZ);
+
+    % Reshape if input is an image (HxWx3)
+    if ndims(XYZ) == 3 && original_shape(3) == 3
+        XYZ = reshape(XYZ, [], 3);
+        reshape_back = true;
+    elseif size(XYZ,2) ~= 3
+        error('Input must have 3 channels (Nx3 or HxWx3).');
+    else
+        reshape_back = false;
+    end
+
+    % 1) Linear ROMM-RGB conversion
+    M = [ ...
+         1.3459433, -0.2556075, -0.0511118;
+        -0.5445989,  1.5081673,  0.0205351;
+         0.0000000,  0.0000000,  1.2118128 ];
     RGB = XYZ * M.';
 
-    % clamp negatives
+    % Clamp negatives before gamma (for stability)
     RGB = max(RGB, 0);
 
-    % 2) Specular-gamma / toe if requested
+    % 2) Gamma encoding
     if applyGamma
         Et    = 1/512;
         slope = 16;
         gamma = 1.8;
 
-        % apply piecewise
         mask = RGB < Et;
-        RGB(mask)    = RGB(mask) * slope;
-        RGB(~mask)   = RGB(~mask).^(1/gamma);
+        RGB(mask)  = RGB(mask) * slope;
+        RGB(~mask) = RGB(~mask).^(1/gamma);
     end
 
-    % 3) Clip to [0,1]
+    % 3) Final clipping to [0, 1] for display
     RGB = min(RGB, 1);
+
+    if reshape_back
+        RGB = reshape(RGB, original_shape);
+    end
 end

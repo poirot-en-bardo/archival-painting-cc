@@ -1,4 +1,4 @@
-function Lab=xyz2lab(XYZ,XYZn)
+function Lab=xyz2lab_custom(XYZ,XYZn)
 
 % XYZ2LAB: calculates L,a,b from XYZ according to CIE 15:2004
 %
