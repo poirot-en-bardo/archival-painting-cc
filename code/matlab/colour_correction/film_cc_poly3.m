@@ -129,12 +129,14 @@ input_RGB_display = xyz2rgb(XYZ_input ./100, 'WhitePoint','d50');
 figure;
 
 subplot(1,2,1);
+imshow(reshape(input_RGB_display, [6, 4, 3])); axis off;
+title('Film Photo RGB', 'FontSize', 16);
+
+subplot(1,2,2);
 imshow(reshape(ref_RGB_display, [6, 4, 3])); axis off;
 title('Reference RGB (from spectra)', 'FontSize', 16);
 
-subplot(1,2,2);
-imshow(reshape(input_RGB_display, [6, 4, 3])); axis off;
-title('Film Photo RGB', 'FontSize', 16);
+
 
 %% Summary
 fprintf('\n---- Cross-Validation Summary (ΔE2000) ----\n');
