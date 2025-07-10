@@ -50,7 +50,7 @@ for f = 1:numel(fields)
         train_idx = training(cv, k);
         test_idx  = test(cv, k);
 
-        X_train = root_poly3_features(input_struct.(name)(train_idx, :));
+        X_train = root_poly_features(input_struct.(name)(train_idx, :));
         % X_train = poly3_features(input_struct.(name)(train_idx, :));
 
         Y_train = ref_struct.(name)(train_idx, :);
@@ -66,12 +66,12 @@ for f = 1:numel(fields)
         coeffs = pinv(X_train) * Y_train;
         lambda = 0.001;
         % coeffs = (X_train' * X_train + lambda * eye(size(X_train, 2))) \ (X_train' * Y_train);
-        % coeffs = pinv(X_train' * X_train + lambda * eye(size(X_train,2))) * X_train' * Y_train;
+        coeffs = pinv(X_train' * X_train + lambda * eye(size(X_train,2))) * X_train' * Y_train;
 
 
 
         % Apply to all data
-        X_all = root_poly3_features(input_struct.(name));
+        X_all = root_poly_features(input_struct.(name));
         % X_all = poly3_features(input_struct.(name));
 
         Y_pred = X_all * coeffs;
@@ -203,7 +203,7 @@ function X_feat = root_poly3_features(input_data)
         nthroot(a.*b,3), nthroot(a.*c,3), nthroot(b.*c,3), ...
         a.^2, b.^2, c.^2, ...                 % Squares
         nthroot(a.^2 + b.^2 + c.^2, 3), ...   % L2-norm-like term
-        a.*b.*c ...                           % Triple interaction
+        % a.*b.*c ...                           % Triple interaction
     ];
 end
 

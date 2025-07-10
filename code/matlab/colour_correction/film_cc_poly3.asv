@@ -1,63 +1,8 @@
-% clear; close all;
-% 
-% %% Load precomputed patch data
-% inputFile = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/yoda_halogen_fuji_underexp_balanced_colorchecker.mat';  
-% refFile = '/home/oem/eliza/masters-thesis/data/CCpassport_spectra.txt';
-% ill = importdata('../../../data/CIE_D50.txt');
-% CMFs = importdata('../../../data/CIE2degCMFs_1931.txt');
-% 
-% S = load(inputFile);
-% 
-% XYZ_input     = S.patchXYZ;
-% Lab_input     = S.patchLab;
-% RGB_input     = S.patchRGB;
-% RGB_lin_input = S.patchRGB_lin;
-% 
-% 
-% %%
-% % Load spectral reflectance reference file
-% refData = readmatrix(refFile, 'NumHeaderLines', 1);  
-% ref_wl = refData(:,1);   % Wavelengths (1st column)
-% ref_spectra = refData(:,2:end);    % 24 columns of reflectance data
-% 
-% valid_idx = ref_wl >= 380 & ref_wl <= 780;
-% ref_wl = ref_wl(valid_idx);
-% ref_spectra = ref_spectra(valid_idx, :);
-% 
-% % Interpolate illuminant and CMFs to match the wavelengths
-% illIP = interp1(ill(:,1), ill(:,2), ref_wl, 'spline');
-% CMFsIP = interp1(CMFs(:,1), CMFs(:,2:4), ref_wl, 'spline');  % x̄ ȳ z̄
-% 
-% % Combine to get the reference XYZ values
-% sp_tristREF = CMFsIP .* illIP;       % Element-wise multiply [N×3]
-% k = 100 / sum(sp_tristREF(:,2));     % Normalization so Y=100 for perfect white
-% 
-% patchXYZ_ref = k * (ref_spectra' * sp_tristREF);   % [24×N] × [N×3] = [24×3]
-% patchLab_ref      = xyz2lab_custom(patchXYZ_ref);
-% patchRGB_ref      = xyz2prophoto(patchXYZ_ref / 100, true);
-% patchRGB_lin_ref  = xyz2prophoto(patchXYZ_ref / 100, false);
-% 
-% XYZ_ref     = patchXYZ_ref;
-% Lab_ref     = patchLab_ref;
-% RGB_ref     = patchRGB_ref;
-% RGB_lin_ref = patchRGB_lin_ref;
-% 
-% %%
-% outputFolder = '/home/oem/eliza/data/xyz_lab_rgb/reference';
-% if ~exist(outputFolder, 'dir')
-%     mkdir(outputFolder);
-% end
-% 
-% [~, refBase, ~] = fileparts(refFile);
-% saveName = fullfile(outputFolder, [refBase '_reference.mat']);
-% 
-% % Save variables
-% save(saveName, 'XYZ_ref', 'Lab_ref', 'RGB_ref', 'RGB_lin_ref');
-% 
-% fprintf('✔ Saved reference color data to:\n%s\n', saveName);
+
 %% Load input and reference patch data
 clear;
-inputFile     = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/yoda_halogen_fuji_underexp_balanced_colorchecker.mat';
+inputFile     = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_halogen_kodak_exp0_balanced_colorchecker.mat';
+inputFile = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/yoda_halogen_fuji_underexp_balanced_colorchecker.mat';
 referenceFile = '/home/oem/eliza/data/xyz_lab_rgb/reference/xrite_cc_reference_official.mat';
 
 input     = load(inputFile);
@@ -106,7 +51,7 @@ for f = 1:numel(fields)
         test_idx  = test(cv, k);
 
         X_train = root_poly_features(input_struct.(name)(train_idx, :));
-        % X_train = poly5_features(input_struct.(name)(train_idx, :));
+        % X_train = poly3_features(input_struct.(name)(train_idx, :));
 
         Y_train = ref_struct.(name)(train_idx, :);
         % mu_X = mean(X_train, 1);
@@ -127,7 +72,7 @@ for f = 1:numel(fields)
 
         % Apply to all data
         X_all = root_poly_features(input_struct.(name));
-        % X_all = poly5_features(input_struct.(name));
+        % X_all = poly3_features(input_struct.(name));
 
         Y_pred = X_all * coeffs;
 
@@ -174,20 +119,24 @@ end
 %%
 
 % Normalize to [0, 1] for display
-ref_RGB_display = RGB_ref;
-ref_RGB_display = ref_RGB_display ./ max(ref_RGB_display(:));
-input_RGB_display = RGB_input;
-input_RGB_display = input_RGB_display ./ max(input_RGB_display(:));
+% ref_RGB_display = RGB_ref;
+ref_RGB_display = xyz2rgb(XYZ_ref ./100, 'WhitePoint','d50');
+% ref_RGB_display = ref_RGB_display ./ max(ref_RGB_display(:));
+% input_RGB_display = RGB_input;
+input_RGB_display = xyz2rgb(XYZ_input ./100, 'WhitePoint','d50');
+% input_RGB_display = input_RGB_display ./ max(input_RGB_display(:));
 
 figure;
 
 subplot(1,2,1);
-imshow(reshape(ref_RGB_display, [6, 4, 3])); axis off;
-title('Reference RGB (from spectra)');
+imshow(reshape(input_RGB_display, [6, 4, 3])); axis off;
+title('Film Photo RGB', 'FontSize', 16);
 
 subplot(1,2,2);
-imshow(reshape(input_RGB_display, [6, 4, 3])); axis off;
-title('Camera RGB Input');
+imshow(reshape(ref_RGB_display, [6, 4, 3])); axis off;
+title('Reference RGB (from spectra)', 'FontSize', 16);
+
+
 
 %% Summary
 fprintf('\n---- Cross-Validation Summary (ΔE2000) ----\n');
@@ -233,17 +182,31 @@ function X_rootpoly = root_poly_features(input_data)
         sqrt(a.*b), sqrt(a.*c), sqrt(b.*c), ...
         a.^2, b.^2, c.^2, ...
         sqrt(abs(a.^2 + b.^2 + c.^2))];
-    % X_rootpoly = [ ...
-    % ones(size(a)), ...
-    % a, b, c, ...
-    % sqrt(a), sqrt(b), sqrt(c), ...
-    % a.*b, a.*c, b.*c, ...
-    % sqrt(a.*b), sqrt(a.*c), sqrt(b.*c), ...
-    % a.^2, b.^2, c.^2, ...
-    % sqrt(abs(a.^2 + b.^2 + c.^2)), ...
-    % a ./ (b + eps), b ./ (c + eps), c ./ (a + eps)];  % avoid div by zero
-
+  
 end
+
+
+function X_feat = root_poly3_features(input_data)
+    % Input: [N x 3] matrix (channels a, b, c)
+    % Output: [N x D] root-polynomial feature matrix
+    % Nonlinearity includes: cube roots, squares, interactions
+
+    a = input_data(:,1);
+    b = input_data(:,2);
+    c = input_data(:,3);
+
+    X_feat = [ ...
+        ones(size(a)), ...                     % Constant term
+        a, b, c, ...                           % Linear terms
+        nthroot(a,3), nthroot(b,3), nthroot(c,3), ... % Cube roots
+        a.*b, a.*c, b.*c, ...                  % 2nd-order cross-terms
+        nthroot(a.*b,3), nthroot(a.*c,3), nthroot(b.*c,3), ...
+        a.^2, b.^2, c.^2, ...                 % Squares
+        nthroot(a.^2 + b.^2 + c.^2, 3), ...   % L2-norm-like term
+        % a.*b.*c ...                           % Triple interaction
+    ];
+end
+
 
 function X_poly = poly4_features(input_data)
     a = input_data(:,1);
