@@ -1,9 +1,14 @@
 clear; close all;
 % cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/cactus_halogen_reflectance_full.hdr';
 % cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/cactus_halogen_reflectance_after_full.hdr';
-cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
-cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
-
+% cubeFile1 = '/home/oem/eliza/data/processed/reflectance/before/yoda_halogen_reflectance_full.hdr';
+% cubeFile2 = '/home/oem/eliza/data/processed/reflectance/after/yoda_halogen_reflectance_after_full.hdr';
+cubeFile1 = '/home/oem/eliza/data/reflectance/registered/cactus_reflectance_before.mat';
+cubeFile2 = '/home/oem/eliza/data/reflectance/registered/cactus_reflectance_after_reg.mat';
+%%
+hcube_before = load(cubeFile1);
+hcube_after = load(cubeFile2);
+%%
 hcube1 = hypercube(cubeFile1); cube1 = hcube1.DataCube; wl1 = hcube1.Wavelength;
 hcube2 = hypercube(cubeFile2); cube2 = hcube2.DataCube; wl2 = hcube2.Wavelength;
 valid_idx1 = find(wl1 >= 380 & wl1 <= 780);

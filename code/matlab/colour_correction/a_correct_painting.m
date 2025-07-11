@@ -4,8 +4,8 @@ clear; close all;
 % painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
 painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
 painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
-cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_halogen_kodak_exp0_colorchecker.mat';
+film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
+cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_led_fuji_underexp_colorchecker.mat';
 cc_ref_path = '/home/oem/eliza/data/xyz_lab_rgb/reference/xrite_cc_reference_official.mat';
 
 
@@ -138,7 +138,7 @@ fprintf('Saved visualisation figure to: %s\n', fig_vis_path);
 %% Delta E maps
 % Define common figure position and size
 figSize = [0.1, 0.2, 1, 0.8];  % [left, bottom, width, height]
-clim_range = [0 30];
+clim_range = [0 20];
 fontSize = 20;
 labelSize = 20;
 
@@ -193,7 +193,7 @@ imagesc(deltaE_after_thresholded);
 axis image off;
 title('Corrected film vs. after ageing (ΔE > 10)', 'FontSize', fontSize, 'FontWeight', 'bold');
 c = colorbar;
-clim([10 30]);
+clim([10 20]);
 c.Label.String = 'ΔE_{00}';
 c.Label.FontSize = labelSize;
 c.Label.FontWeight = 'bold';
