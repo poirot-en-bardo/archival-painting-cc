@@ -1,9 +1,11 @@
 clear; close all;
 
-painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
-painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0_balanced_registered_xyz.mat';
-cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_halogen_kodak_exp0_balanced_colorchecker.mat';
+% painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+% painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
+painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
+film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_led_fuji_exp0_colorchecker.mat';
 cc_ref_path = '/home/oem/eliza/data/xyz_lab_rgb/reference/xrite_cc_reference_official.mat';
 
 
@@ -72,7 +74,7 @@ mask_before = painting_before.spec_mask;
 
 deltaE_after_img(mask_after)   = 0;
 deltaE_before_img(mask_before) = 0;
-
+%%
 % --- Compute ΔE between painting before and after ageing ---
 lab_before = reshape(painting_before.Lab_img, [], 3);
 lab_after  = reshape(painting_after.Lab_img, [], 3);
@@ -89,10 +91,10 @@ deltaE_after_thresholded(deltaE_after_thresholded < 10) = 0;
 
 %% Visualisation
 % Convert all RGB images from ProPhoto to sRGB for display
-film_rgb_srgb          = xyz2rgb(film_data.XYZ_img ./100, 'ColorSpace', 'srgb');
-corrected_rgb_srgb     = xyz2rgb(prophoto2xyz(corrected_rgb, true) ./100, 'ColorSpace', 'srgb');
-painting_before_srgb   = xyz2rgb(painting_before.XYZ_img ./100, 'ColorSpace', 'srgb');
-painting_after_srgb    = xyz2rgb(painting_after.XYZ_img ./100, 'ColorSpace', 'srgb');
+film_rgb_srgb          = xyz2rgb(film_data.XYZ_img ./100, 'ColorSpace', 'srgb', 'WhitePoint','d50');
+corrected_rgb_srgb     = xyz2rgb(prophoto2xyz(corrected_rgb, true) ./100, 'ColorSpace', 'srgb', 'WhitePoint','d50');
+painting_before_srgb   = xyz2rgb(painting_before.XYZ_img ./100, 'ColorSpace', 'srgb', 'WhitePoint', 'd50');
+painting_after_srgb    = xyz2rgb(painting_after.XYZ_img ./100, 'ColorSpace', 'srgb', 'WhitePoint','d50');
 
 % Reshape to image form
 film_rgb_srgb_img        = reshape(film_rgb_srgb, h, w, 3);
@@ -126,7 +128,9 @@ title('Painting (Before Ageing)', 'FontSize', fontSize, 'FontWeight', fontWeight
 %%
 % Save figures
 fig_vis_path = fullfile(outputDir, [film_base_name '_visualisation.png']);
-saveas(fig_vis, fig_vis_path);
+% saveas(fig_vis, fig_vis_path);
+exportgraphics(fig_vis, fig_vis_path, 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 fprintf('Saved visualisation figure to: %s\n', fig_vis_path);
 
 
@@ -149,7 +153,9 @@ c.Label.String = 'ΔE_{00}';
 c.Label.FontSize = labelSize;
 c.Label.FontWeight = 'bold';
 set(gca, 'FontSize', labelSize, 'FontWeight', 'bold');
-saveas(fig1, fullfile(outputDir, [film_base_name '_deltaE_before.png']));
+% saveas(fig1, fullfile(outputDir, [film_base_name '_deltaE_before.png']));
+exportgraphics(fig1, fullfile(outputDir, [film_base_name '_deltaE_before.png']), 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 
 % --- 2. ΔE map: corrected vs. HSI after ageing ---
 fig2 = figure('Units', 'normalized', 'Position', figSize);
@@ -162,7 +168,9 @@ c.Label.String = 'ΔE_{00}';
 c.Label.FontSize = labelSize;
 c.Label.FontWeight = 'bold';
 set(gca, 'FontSize', labelSize, 'FontWeight', 'bold');
-saveas(fig2, fullfile(outputDir, [film_base_name '_deltaE_after.png']));
+% saveas(fig2, fullfile(outputDir, [film_base_name '_deltaE_after.png']));
+exportgraphics(fig2, fullfile(outputDir, [film_base_name '_deltaE_after.png']), 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 
 % --- 3. ΔE map: HSI before vs. after ageing ---
 fig3 = figure('Units', 'normalized', 'Position', figSize);
@@ -175,7 +183,9 @@ c.Label.String = 'ΔE_{00}';
 c.Label.FontSize = labelSize;
 c.Label.FontWeight = 'bold';
 set(gca, 'FontSize', labelSize, 'FontWeight', 'bold');
-saveas(fig3, fullfile(outputDir, [film_base_name '_deltaE_painting_before_after.png']));
+% saveas(fig3, fullfile(outputDir, [film_base_name '_deltaE_painting_before_after.png']));
+exportgraphics(fig3, fullfile(outputDir, [film_base_name '_deltaE_painting_before_after.png']), 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 
 % --- 4. ΔE map: thresholded ΔE > 10 ---
 fig4 = figure('Units', 'normalized', 'Position', figSize);
@@ -188,7 +198,8 @@ c.Label.String = 'ΔE_{00}';
 c.Label.FontSize = labelSize;
 c.Label.FontWeight = 'bold';
 set(gca, 'FontSize', labelSize, 'FontWeight', 'bold');
-saveas(fig4, fullfile(outputDir, [film_base_name '_deltaE_after_thresh10.png']));
+% saveas(fig4, fullfile(outputDir, [film_base_name '_deltaE_after_thresh10.png']));
+exportgraphics(fig4, fullfile(outputDir, [film_base_name '_deltaE_after_thresh10.png']), 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
 
 
 %% Delta E histograms
@@ -229,7 +240,9 @@ set(gca, 'FontSize', tickFontSize, 'FontWeight', 'bold');
 
 % Save histogram figure
 hist_out_path = fullfile(outputDir, [film_base_name '_deltaE_histograms.png']);
-saveas(fig_hist, hist_out_path);
+% saveas(fig_hist, hist_out_path);
+exportgraphics(fig_hist, hist_out_path, 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 fprintf('Saved histogram figure to: %s\n', hist_out_path);
 
 
@@ -241,7 +254,7 @@ tiledlayout(1, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
 
 fontSize = 20;
 labelSize = 18;
-clim_range = [0 30];
+clim_range = [0 20];
 
 % 1. Before ageing (sRGB)
 nexttile;
@@ -267,7 +280,9 @@ set(gca, 'FontSize', labelSize, 'FontWeight', 'bold');
 
 % Save the figure
 deltaE_painting_vis_path = fullfile(outputDir, [film_base_name '_painting_before_after_visual.png']);
-saveas(fig_hsi_deltaE, deltaE_painting_vis_path);
+% saveas(fig_hsi_deltaE, deltaE_painting_vis_path);
+exportgraphics(fig_hsi_deltaE, deltaE_painting_vis_path, 'Resolution', 300, 'BackgroundColor', 'none', 'ContentType', 'image');
+
 fprintf('Saved HSI before/after/ΔE figure to: %s\n', deltaE_painting_vis_path);
 
 
