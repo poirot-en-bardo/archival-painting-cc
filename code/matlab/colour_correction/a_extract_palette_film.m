@@ -1,7 +1,8 @@
 clear; close all;
 
 %% === Paths ===
-new_film_file = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';  % NEW FILM
+new_film_file = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';  % NEW FILM
+painting_before_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
 cluster_metadata_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/cactus_spectral_cluster_metadata.mat';
 painting_after_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/cactus_painting_after_cluster_rgb.mat';
 
@@ -10,6 +11,7 @@ load(cluster_metadata_file, 'cluster_idx', 'valid_mask', 'nColors');
 
 % Load new film Lab/XYZ/RGB
 film_data = load(new_film_file);
+painting_before = load(painting_before_file);
 Lab_film = reshape(film_data.Lab_img, [], 3);
 XYZ_film = reshape(film_data.XYZ_img, [], 3);
 RGB_film = reshape(film_data.RGB_img, [], 3);
@@ -40,8 +42,8 @@ if ~exist(save_dir, 'dir')
     mkdir(save_dir);
 end
 
-save(fullfile(save_dir, [film_base_name '_cluster.mat']), ...
-    'lab_film_clustered', 'xyz_film_clustered', 'rgb_film_clustered');
+% save(fullfile(save_dir, [film_base_name '_cluster.mat']), ...
+%     'lab_film_clustered', 'xyz_film_clustered', 'rgb_film_clustered');
 
 fprintf('Saved clustered film data to: %s\n', save_dir);
 
@@ -99,3 +101,63 @@ title('Cluster Palette Comparison: After Painting (top right) vs Film (bottom le
     'FontSize', 20, 'FontWeight', 'bold');
 
 exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_after_vs_film.png']), 'Resolution', 300);
+
+
+%%
+%% === Cluster Painting Before Data and Compare with Film ===
+Lab_before  = reshape(painting_before.Lab_img, [], 3);
+XYZ_before  = reshape(painting_before.XYZ_img, [], 3);
+RGB_before  = reshape(painting_before.RGB_img, [], 3);
+
+lab_before_valid = Lab_before(valid_mask(:), :);
+xyz_before_valid = XYZ_before(valid_mask(:), :);
+rgb_before_valid = RGB_before(valid_mask(:), :);
+
+% Compute cluster means for Painting Before
+lab_before_clustered = zeros(nColors, 3);
+xyz_before_clustered = zeros(nColors, 3);
+rgb_before_clustered = zeros(nColors, 3);
+
+for k = 1:nColors
+    mask_k = cluster_idx == k;
+    lab_before_clustered(k,:) = mean(lab_before_valid(mask_k,:), 1, 'omitnan');
+    xyz_before_clustered(k,:) = mean(xyz_before_valid(mask_k,:), 1, 'omitnan');
+    rgb_before_clustered(k,:) = mean(rgb_before_valid(mask_k,:), 1, 'omitnan');
+end
+
+% Convert to sRGB
+srgb_before_clustered = xyz2rgb(xyz_before_clustered ./ 100, 'ColorSpace', 'srgb', 'WhitePoint', 'd50');
+
+% === Diagonal Split Patch Plot (Painting Before vs Film) ===
+img_diag = ones(grid_h * patchSize, grid_w * patchSize, 3);
+for k = 1:nColors
+    row = floor((k - 1) / grid_w);
+    col = mod((k - 1), grid_w);
+    r_idx = (row * patchSize + 1):((row + 1) * patchSize);
+    c_idx = (col * patchSize + 1):((col + 1) * patchSize);
+
+    patch_before = repmat(reshape(srgb_before_clustered(k,:), 1, 1, 3), patchSize, patchSize, 1);
+    patch_film   = repmat(reshape(srgb_film_clustered(k,:), 1, 1, 3), patchSize, patchSize, 1);
+
+    [X, Y] = meshgrid(1:patchSize, 1:patchSize);
+    diag_mask = Y > X;
+
+    patch = patch_before;
+    for c = 1:3
+        temp = patch(:,:,c);
+        temp2 = patch_film(:,:,c);
+        temp(diag_mask) = temp2(diag_mask);
+        patch(:,:,c) = temp;
+    end
+
+    img_diag(r_idx, c_idx, :) = patch;
+end
+
+figure('Position', [100 100 1200 1100]);
+tiledlayout(1,1, 'Padding','compact', 'TileSpacing','compact');
+nexttile;
+imshow(img_diag);
+title('Cluster Palette Comparison: Painting Before (top right) vs Film (bottom left)', ...
+    'FontSize', 20, 'FontWeight', 'bold');
+
+exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_film.png']), 'Resolution', 300);
