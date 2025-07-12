@@ -4,8 +4,8 @@ clear; close all;
 % painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
 painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
 painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
-cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_led_fuji_underexp_colorchecker.mat';
+film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
+cc_film_path = '/home/oem/eliza/data/xyz_lab_rgb/colorchecker/cactus_led_fuji_exp0_colorchecker.mat';
 cc_ref_path = '/home/oem/eliza/data/xyz_lab_rgb/reference/xrite_cc_reference_official.mat';
 
 
