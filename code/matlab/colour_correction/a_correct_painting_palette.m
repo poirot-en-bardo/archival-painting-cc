@@ -5,8 +5,8 @@ painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_
 painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
 % painting_after_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
 % painting_before_path = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
-cluster_rgb_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/filtered/yoda_halogen_fuji_overexp/yoda_halogen_fuji_overexp_cluster.mat';
+film_path = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
+cluster_rgb_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/filtered/yoda_led_kodak_exp0/yoda_led_kodak_exp0_cluster.mat';
 painting_after_palette_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/yoda_painting_after_cluster_rgb.mat';
 
 
