@@ -1,16 +1,16 @@
 clear; close all;
 
 %% === File paths ===
-% painting_before_binned_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-% painting_after_binned_file  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
-% painting_after_ref_file     = '/home/oem/eliza/data/reflectance/registered/cactus_reflectance_after_reg.mat';
-% film_file                   = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
-% change_mask_file            = '/home/oem/eliza/data/xyz_lab_rgb/change_gt/cactus_change_mask.mat';
-painting_before_binned_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-painting_after_binned_file  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
-painting_after_ref_file     = '/home/oem/eliza/data/reflectance/registered/yoda_reflectance_after_reg.mat';
-film_file                   = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
-change_mask_file            = '/home/oem/eliza/data/xyz_lab_rgb/change_gt/yoda_change_mask.mat';
+painting_before_binned_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
+painting_after_binned_file  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
+painting_after_ref_file     = '/home/oem/eliza/data/reflectance/registered/cactus_reflectance_after_reg.mat';
+film_file                   = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+change_mask_file            = '/home/oem/eliza/data/xyz_lab_rgb/change_gt/cactus_change_mask.mat';
+% painting_before_binned_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+% painting_after_binned_file  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+% painting_after_ref_file     = '/home/oem/eliza/data/reflectance/registered/yoda_reflectance_after_reg.mat';
+% film_file                   = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% change_mask_file            = '/home/oem/eliza/data/xyz_lab_rgb/change_gt/yoda_change_mask.mat';
 
 
 rng(42);

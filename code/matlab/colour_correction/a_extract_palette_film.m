@@ -1,6 +1,6 @@
 clear; close all;
 
-%% === Paths ===
+% === Paths ===
 new_film_file = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';  % NEW FILM
 painting_before_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
 cluster_metadata_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/cactus_spectral_cluster_metadata.mat';
@@ -100,7 +100,7 @@ imshow(img_diag);
 title('Cluster Palette Comparison: After Painting (top right) vs Film (bottom left)', ...
     'FontSize', 20, 'FontWeight', 'bold');
 
-exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_after_vs_film.png']), 'Resolution', 300);
+% exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_after_vs_film.png']), 'Resolution', 300);
 
 
 %%
@@ -160,4 +160,82 @@ imshow(img_diag);
 title('Cluster Palette Comparison: Painting Before (top right) vs Film (bottom left)', ...
     'FontSize', 20, 'FontWeight', 'bold');
 
-exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_film.png']), 'Resolution', 300);
+% exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_film.png']), 'Resolution', 300);
+
+
+%% === Diagonal Split Patch Plot (Before vs After) ===
+img_diag = ones(grid_h * patchSize, grid_w * patchSize, 3);
+for k = 1:nColors
+    row = floor((k - 1) / grid_w);
+    col = mod((k - 1), grid_w);
+    r_idx = (row * patchSize + 1):((row + 1) * patchSize);
+    c_idx = (col * patchSize + 1):((col + 1) * patchSize);
+
+    patch_before = repmat(reshape(srgb_before_clustered(k,:), 1, 1, 3), patchSize, patchSize, 1);
+    patch_after  = repmat(reshape(srgb_after(k,:), 1, 1, 3), patchSize, patchSize, 1);
+
+    [X, Y] = meshgrid(1:patchSize, 1:patchSize);
+    diag_mask = Y > X;
+
+    patch = patch_before;
+    for c = 1:3
+        temp = patch(:,:,c);
+        temp2 = patch_after(:,:,c);
+        temp(diag_mask) = temp2(diag_mask);
+        patch(:,:,c) = temp;
+    end
+
+    img_diag(r_idx, c_idx, :) = patch;
+end
+
+figure('Position', [100 100 1200 1100]);
+tiledlayout(1,1, 'Padding','compact', 'TileSpacing','compact');
+nexttile;
+imshow(img_diag);
+title('Cluster Palette Comparison: Painting Before (top right) vs After (bottom left)', ...
+    'FontSize', 20, 'FontWeight', 'bold');
+
+exportgraphics(gcf, fullfile(save_dir, [film_base_name '_palette_before_vs_after.png']), 'Resolution', 300);
+
+%%
+%% === Compute Delta E₀₀ Between Painting Before and After Clusters ===
+DE_before_after = deltaE2000(lab_before_clustered, painting_data.lab_after_clustered);
+
+% Convert to grid format
+dE_grid_before_after = zeros(grid_h, grid_w);
+for k = 1:nColors
+    row = floor((k-1) / grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    dE_grid_before_after(row, col) = DE_before_after(k);
+end
+
+% Plot
+figure('Position', [100 100 800 700]);
+imagesc(dE_grid_before_after);
+axis image off;
+colormap(jet(256));
+clim([0 10]);
+
+cb = colorbar;
+cb.Label.String = '\DeltaE_{00}';
+cb.Label.FontSize = 16;
+cb.Label.FontWeight = 'bold';
+cb.FontSize = 16;
+cb.FontWeight = 'bold';
+
+title('\DeltaE_{00} Between Painting Before vs After', ...
+    'FontSize', 18, 'FontWeight', 'bold');
+
+% Overlay values
+for k = 1:nColors
+    row = floor((k-1)/grid_w) + 1;
+    col = mod((k-1), grid_w) + 1;
+    text(col, row, sprintf('%.1f', DE_before_after(k)), ...
+        'HorizontalAlignment','center', 'Color','w', ...
+        'FontSize', 12, 'FontWeight', 'bold');
+end
+
+% Save
+exportgraphics(gcf, ...
+    fullfile(save_dir, [film_base_name '_palette_deltaE_before_vs_after.png']), ...
+    'Resolution', 300);
