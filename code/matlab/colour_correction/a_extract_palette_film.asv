@@ -1,10 +1,12 @@
 clear; close all;
 
 % === Paths ===
-new_film_file = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';  % NEW FILM
-painting_before_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-cluster_metadata_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/cactus_spectral_cluster_metadata.mat';
-painting_after_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/cactus_painting_after_cluster_rgb.mat';
+new_film_file = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';  % NEW FILM
+new_film_file2 = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';  % NEW FILM
+
+painting_before_file = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+cluster_metadata_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/yoda_spectral_cluster_metadata.mat';
+painting_after_file = '/home/oem/eliza/data/xyz_lab_rgb/clustered/yoda_painting_after_cluster_rgb.mat';
 
 % Load cluster metadata
 load(cluster_metadata_file, 'cluster_idx', 'valid_mask', 'nColors');
@@ -100,7 +102,7 @@ imshow(img_diag);
 title('Cluster Palette Comparison: After Painting (top right) vs Film (bottom left)', ...
     'FontSize', 20, 'FontWeight', 'bold');
 
-exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_after_vs_film.png']), 'Resolution', 300);
+% exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_after_vs_film.png']), 'Resolution', 300);
 
 
 %%
@@ -160,7 +162,7 @@ imshow(img_diag);
 title('Cluster Palette Comparison: Painting Before (top right) vs Film (bottom left)', ...
     'FontSize', 20, 'FontWeight', 'bold');
 
-exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_film.png']), 'Resolution', 300);
+% exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_film.png']), 'Resolution', 300);
 
 
 %% === Diagonal Split Patch Plot (Before vs After) ===
@@ -195,7 +197,7 @@ imshow(img_diag);
 title('Cluster Palette Comparison: Painting Before (top right) vs After (bottom left)', ...
     'FontSize', 20, 'FontWeight', 'bold');
 
-exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_before_vs_after.png']), 'Resolution', 300);
+% exportgraphics(gcf, fullfile(save_dir, [film_base_name '_palette_before_vs_after.png']), 'Resolution', 300);
 
 %%
 %% === Compute Delta E₀₀ Between Painting Before and After Clusters ===
@@ -235,7 +237,62 @@ for k = 1:nColors
         'FontSize', 12, 'FontWeight', 'bold');
 end
 
-% Save
-exportgraphics(gcf, ...
-    fullfile(save_dir, [film_base_name '_palette_deltaE_before_vs_after.png']), ...
-    'Resolution', 300);
+% % Save
+% exportgraphics(gcf, ...
+%     fullfile(save_dir, [film_base_name '_palette_deltaE_before_vs_after.png']), ...
+%     'Resolution', 300);
+
+
+%% === Compare Clusters of Film 1 vs Film 2 ===
+film_data2 = load(new_film_file2);
+Lab_film2 = reshape(film_data2.Lab_img, [], 3);
+XYZ_film2 = reshape(film_data2.XYZ_img, [], 3);
+
+lab_film2_valid = Lab_film2(valid_mask(:), :);
+xyz_film2_valid = XYZ_film2(valid_mask(:), :);
+
+lab_film2_clustered = zeros(nColors, 3);
+xyz_film2_clustered = zeros(nColors, 3);
+
+for k = 1:nColors
+    mask_k = cluster_idx == k;
+    lab_film2_clustered(k,:) = mean(lab_film2_valid(mask_k,:), 1, 'omitnan');
+    xyz_film2_clustered(k,:) = mean(xyz_film2_valid(mask_k,:), 1, 'omitnan');
+end
+
+srgb_film2_clustered = xyz2rgb(xyz_film2_clustered ./ 100, ...
+    'ColorSpace', 'srgb', 'WhitePoint', 'd50');
+
+% Diagonal visualisation: Film 1 (top right) vs Film 2 (bottom left)
+img_diag = ones(grid_h * patchSize, grid_w * patchSize, 3);
+for k = 1:nColors
+    row = floor((k - 1) / grid_w);
+    col = mod((k - 1), grid_w);
+    r_idx = (row * patchSize + 1):((row + 1) * patchSize);
+    c_idx = (col * patchSize + 1):((col + 1) * patchSize);
+
+    patch1 = repmat(reshape(srgb_film_clustered(k,:), 1, 1, 3), patchSize, patchSize, 1);
+    patch2 = repmat(reshape(srgb_film2_clustered(k,:), 1, 1, 3), patchSize, patchSize, 1);
+
+    [X, Y] = meshgrid(1:patchSize, 1:patchSize);
+    diag_mask = Y > X;
+
+    patch = patch1;
+    for c = 1:3
+        temp = patch(:,:,c);
+        temp2 = patch2(:,:,c);
+        temp(diag_mask) = temp2(diag_mask);
+        patch(:,:,c) = temp;
+    end
+
+    img_diag(r_idx, c_idx, :) = patch;
+end
+
+figure('Position', [100 100 1200 1100]);
+tiledlayout(1,1, 'Padding','compact', 'TileSpacing','compact');
+nexttile;
+imshow(img_diag);
+title('Cluster Comparison: Fuji Haloe (top right) vs Film 2 (bottom left)', ...
+    'FontSize', 20, 'FontWeight', 'bold');
+
+exportgraphics(gcf, fullfile(save_dir, [film_base_name '_comparison_film1_vs_film2.png']), 'Resolution', 300);
