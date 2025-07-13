@@ -1,23 +1,29 @@
 clear; close all; clc;
 
 %% --- Paths & Load Data ---
-% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
-% path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
-path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
-path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
+% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
+path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
 painting_before = load(path_before);
 painting_after  = load(path_after);
 film_data       = load(path_film);
 
 %% --- Prepare output directory & filename prefix ---
-outputDir = '/home/oem/eliza/masters-thesis/results/plots/dog';
+baseDir   = '/home/oem/eliza/masters-thesis/results/plots/dog';
+[~, filmName, ~] = fileparts(path_film);
+outputDir = fullfile(baseDir, filmName);
 if ~exist(outputDir,'dir')
     mkdir(outputDir);
 end
-[~, filmName, ~] = fileparts(path_film);
 
 %% --- Lab images & linear RGB ---
 Lab_before = painting_before.Lab_img;

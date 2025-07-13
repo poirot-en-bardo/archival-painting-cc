@@ -4,13 +4,13 @@ clear; close all;
 
 path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
 path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
-% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
 
 path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_overexp.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
+path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
@@ -22,11 +22,12 @@ painting_after  = load(path_after);
 film_data       = load(path_film);
 
 %% --- Prepare output directory & filename prefix ---
-outputDir = '/home/oem/eliza/masters-thesis/results/plots/retinex';
-if ~exist(outputDir, 'dir')
+baseDir = '/home/oem/eliza/masters-thesis/results/plots/retinex';
+[~, filmName, ~] = fileparts(path_film);
+outputDir = fullfile(baseDir, filmName);
+if ~exist(outputDir,'dir')
     mkdir(outputDir);
 end
-[~, filmName, ~] = fileparts(path_film);
 
 %% --- Use linear RGB ---
 img_before = painting_before.RGB_lin_img;
@@ -51,7 +52,7 @@ Lab_film       = film_data.Lab_img;
 dE_map_film_direct = reshape(deltaE2000(reshape(Lab_film,[],3), reshape(Lab_after,[],3)), size(Lab_after,1), size(Lab_after,2));
 
 %% --- Threshold control ---
-use_fixed_threshold = true;  % Set to true for ΔE ≥ 6 on all
+use_fixed_threshold = false;  % Set to true for ΔE ≥ 6 on all
 
 if use_fixed_threshold
     deltaE_threshold = 6;
@@ -90,7 +91,7 @@ axis off;
 
 % export figure 1
 file1 = fullfile(outputDir, sprintf('%s_sRGB_Comparison.png', filmName));
-exportgraphics(h1, file1, 'Resolution', 300);
+% exportgraphics(h1, file1, 'Resolution', 300);
 
 %% --- Figure 2: ΔE ≥ maps ---
 h2 = figure('Name','Thresholded ΔE Maps','Units','normalized','Position',[0.05 0.1 0.7 0.6]);
@@ -100,19 +101,19 @@ fontSize = 18;
 % Film vs HSI after (no Retinex)
 nexttile;
 imshow(mask_film_direct);
-title({'Film vs. HSI after','ΔE > 6'},'FontSize',fontSize);
+title({'Film vs. HSI after','ΔE > 75th percentile'},'FontSize',fontSize);
 axis off;
 
 %Retinex ΔE ≥ threshold 
-% nexttile;
-% imshow(mask_retinex);
-% title({'Film vs. HSI after','Retinex, ΔE > 75th percentile'},'FontSize',fontSize);
-% axis off;
+nexttile;
+imshow(mask_retinex);
+title({'Film vs. HSI after','Retinex, ΔE > 75th percentile'},'FontSize',fontSize);
+axis off;
 
 % Ground Truth ΔE ≥ threshold
 nexttile;
 imshow(mask_direct);
-title({'HSI before vs. after','ΔE > 6'},'FontSize',fontSize);
+title({'HSI before vs. after','ΔE > 5th percentile'},'FontSize',fontSize);
 axis off;
 
 % choose suffix based on threshold mode
@@ -124,7 +125,13 @@ end
 
 % export figure 2
 file2 = fullfile(outputDir, sprintf('%s_Thresholded_DE_Maps_%s.png', filmName, suffix));
-exportgraphics(h2, file2, 'Resolution', 300);
+% exportgraphics(h2, file2, 'Resolution', 300);
+
+%% --- Save Retinex mask as .mat for later use ---
+mask = logical(mask_retinex);  % ensure logical type
+maskFile = fullfile(outputDir, sprintf('%s_retinex_mask.mat', filmName));
+save(maskFile, 'mask');
+
 %% --- Helper Functions ---
 function R = apply_multiscale_retinex(img_rgb, sigma_values)
     img_rgb(img_rgb <= 0) = eps;

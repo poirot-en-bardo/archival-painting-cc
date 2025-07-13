@@ -1,12 +1,17 @@
 clear; close all; clc;
 
 %% --- Paths & Load Data ---
-path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
-path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
-% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
-% path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
+path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
+% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_overexp.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
 painting_before = load(path_before);
 painting_after  = load(path_after);
@@ -45,13 +50,13 @@ dE_map_film_direct = reshape(deltaE2000(reshape(Lab_film,[],3), reshape(Lab_afte
 fixed_threshold  = 6;
 mask_hp       = dE_map_hp    >= fixed_threshold;
 mask_direct   = dE_map_direct>= fixed_threshold;
-    mask_film_direct = dE_map_film_direct  >= deltaE_threshold;
+mask_film_direct = dE_map_film_direct  >= fixed_threshold;
 
 
 
 %% --- Figure 2: Change Detection Masks ---
 % --- Figure 2: Change Detection Masks with Larger Font ---
-h2 = figure('Name','Change Detection Masks','Units','normalized','Position',[0.05 0.1 0.6 1]);
+h2 = figure('Name','Change Detection Masks','Units','normalized','Position',[0.05 0.1 0.8 1]);
 tiledlayout(1,3,'Padding','compact','TileSpacing','compact');
 fontSize = 20;  % larger font size
 
