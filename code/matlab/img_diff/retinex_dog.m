@@ -1,0 +1,108 @@
+clear; close all; clc;
+
+%% --- Paths & Load Data ---
+% path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
+% path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+% path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
+path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
+path_film   = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+
+painting_before = load(path_before);
+painting_after  = load(path_after);
+film_data       = load(path_film);
+
+%% --- Prepare output directory & filename prefix ---
+outputDir = '/home/oem/eliza/masters-thesis/results/plots/dog';
+if ~exist(outputDir,'dir')
+    mkdir(outputDir);
+end
+[~, filmName, ~] = fileparts(path_film);
+
+%% --- Lab images & linear RGB ---
+Lab_before = painting_before.Lab_img;
+Lab_after  = painting_after.Lab_img;
+Lab_film   = film_data.Lab_img;
+film_RGB   = film_data.RGB_lin_img;
+
+%% --- Multi‐scale high‐pass on Lab channels ---
+% Define three scales: fine, mid, coarse
+[M,N,~]       = size(Lab_film);
+sigma_min     = 1;
+sigma_max     = min(M,N)/2;  % half the short side
+sigma_scales  = round(logspace(log10(sigma_min), log10(sigma_max), 3));
+
+Lab_film_hp  = multiscale_hp_filter(Lab_film,  sigma_scales);
+Lab_after_hp = multiscale_hp_filter(Lab_after, sigma_scales);
+
+%% --- ΔE2000 comparison (HP‐processed) ---
+dE_map_hp     = compute_deltaE2000(Lab_film_hp,  Lab_after_hp);
+dE_map_direct = compute_deltaE2000(Lab_before,    Lab_after);  % ground truth
+Lab_film       = film_data.Lab_img;
+dE_map_film_direct = reshape(deltaE2000(reshape(Lab_film,[],3), reshape(Lab_after,[],3)), size(Lab_after,1), size(Lab_after,2));
+
+%% --- Thresholded masks (ΔE ≥ 6) ---
+fixed_threshold  = 6;
+mask_hp       = dE_map_hp    >= fixed_threshold;
+mask_direct   = dE_map_direct>= fixed_threshold;
+mask_film_direct = dE_map_film_direct  >= fixed_threshold;
+
+
+
+%% --- Figure 2: Change Detection Masks ---
+% --- Figure 2: Change Detection Masks with Larger Font ---
+h2 = figure('Name','Change Detection Masks','Units','normalized','Position',[0.05 0.1 0.8 1]);
+tiledlayout(1,3,'Padding','compact','TileSpacing','compact');
+fontSize = 20;  % larger font size
+
+nexttile;
+imshow(mask_film_direct);
+title({'Film vs. HSI after','ΔE > 6'},'FontSize',fontSize);
+axis off;
+
+nexttile;
+imshow(mask_hp);
+title({'Film vs. HSI after','Multi‐Scale DoG, ΔE > 6'}, 'FontSize', fontSize);
+
+nexttile;
+imshow(mask_direct);
+title({'HSI before vs. after','ΔE > 6'}, 'FontSize', fontSize);
+
+% export figure 2
+file2 = fullfile(outputDir, sprintf('%s_Change_Detection_Masks.png', filmName));
+exportgraphics(h2, file2, 'Resolution', 300);
+
+
+%%
+mask = logical(mask_hp);  
+
+
+
+% Build output path
+maskFile = fullfile(outputDir, sprintf('%s_change_mask.mat', filmName));
+
+% Save the mask for later use
+save(maskFile, 'mask');
+
+%% --- Function: Multi‐scale High‐Pass Filter ---
+function Lab_hp = multiscale_hp_filter(Lab_img, sigma_scales)
+    Lab_hp = zeros(size(Lab_img));
+    n = numel(sigma_scales);
+    for c = 1:3
+        acc = zeros(size(Lab_img(:,:,1)));
+        for sigma = sigma_scales
+            blur  = imgaussfilt(Lab_img(:,:,c), sigma);
+            acc   = acc + (Lab_img(:,:,c) - blur);
+        end
+        Lab_hp(:,:,c) = acc / n;
+    end
+end
+
+%% --- Function: Compute ΔE2000 map ---
+function dE_map = compute_deltaE2000(L1, L2)
+    sz   = size(L1);
+    A    = reshape(L1,[],3);
+    B    = reshape(L2,[],3);
+    dE   = deltaE2000(A,B);
+    dE_map = reshape(dE, sz(1), sz(2));
+end
