@@ -9,8 +9,8 @@ path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_re
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
-path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
+path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
 % path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
 painting_before = load(path_before);
@@ -34,9 +34,13 @@ film_RGB   = film_data.RGB_lin_img;
 %% --- Multi‐scale high‐pass on Lab channels ---
 % Define three scales: fine, mid, coarse
 [M,N,~]       = size(Lab_film);
-sigma_min     = 1;
-sigma_max     = min(M,N)/2;  % half the short side
-sigma_scales  = round(logspace(log10(sigma_min), log10(sigma_max), 3));
+
+% sigma_scales  = round(logspace(log10(sigma_min), log10(sigma_max), 3));
+sigma_min  = 1;
+sigma_max  = min(M,N)/2;                 % half the short side
+sigma_mid  = sqrt(sigma_min * sigma_max);% geometric mean
+sigma_mid = (sigma_min+sigma_max) /2;
+sigma_scales = [sigma_min, sigma_mid, sigma_max];
 
 Lab_film_hp  = multiscale_hp_filter(Lab_film,  sigma_scales);
 Lab_after_hp = multiscale_hp_filter(Lab_after, sigma_scales);
@@ -76,7 +80,7 @@ title({'HSI before vs. after','ΔE > 6'}, 'FontSize', fontSize);
 
 % export figure 2
 file2 = fullfile(outputDir, sprintf('%s_Change_Detection_Masks.png', filmName));
-exportgraphics(h2, file2, 'Resolution', 300);
+% exportgraphics(h2, file2, 'Resolution', 300);
 
 
 %%
@@ -88,7 +92,7 @@ mask = logical(mask_hp);
 maskFile = fullfile(outputDir, sprintf('%s_change_mask.mat', filmName));
 
 % Save the mask for later use
-save(maskFile, 'mask');
+% save(maskFile, 'mask');
 
 %% --- Function: Multi‐scale High‐Pass Filter ---
 function Lab_hp = multiscale_hp_filter(Lab_img, sigma_scales)

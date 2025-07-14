@@ -30,7 +30,7 @@ Lab_film_dog  = multiscale_dog_filter(Lab_film, sigma_pairs);
 Lab_after_dog = multiscale_dog_filter(Lab_after, sigma_pairs);
 
 % --- ΔE2000 comparison (DoG-processed)
-dE_map_dog    = compute_deltaE2000(Lab_film_dog, Lab_after_dog);
+dE_map_dog    = compute_deltaE2000(Lab_film_dog, Lab_after);
 dE_map_direct = compute_deltaE2000(Lab_before, Lab_after);  % ground truth unmodified
 
 % --- Thresholded masks
@@ -54,7 +54,7 @@ nexttile; imshow(mask_direct); title({'Ground Truth','Before vs After ΔE ≥ 6'
 
 % export figure 2
 file2 = fullfile(outputDir, sprintf('%s_Change_Detection_Masks.png', filmName));
-exportgraphics(h2, file2, 'Resolution', 300);
+% exportgraphics(h2, file2, 'Resolution', 300);
 
 
 
