@@ -2,17 +2,20 @@ clear; close all;
 
 
 
-path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat';
-path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat';
-path_before = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat';
-path_after  = '/home/oem/eliza/data/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
 
-path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
-path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
-% path_film = '/home/oem/eliza/data/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
+path_before = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat'; 
+path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat'; 
+path_before = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat'; 
+path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
+
+
+
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
+path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
 
 
@@ -22,7 +25,7 @@ painting_after  = load(path_after);
 film_data       = load(path_film);
 
 %% --- Prepare output directory & filename prefix ---
-baseDir = '/home/oem/eliza/masters-thesis/results/plots/retinex';
+baseDir = '.';
 [~, filmName, ~] = fileparts(path_film);
 outputDir = fullfile(baseDir, filmName);
 if ~exist(outputDir,'dir')
@@ -38,7 +41,8 @@ bool        = false;
 %% --- Multiscale Retinex ---
 sigma_values = [15, 80, 250];
 refl_film  = apply_multiscale_retinex(film_RGB, sigma_values);
-refl_after = apply_multiscale_retinex(img_after, sigma_values);
+% refl_after = apply_multiscale_retinex(img_after, sigma_values);
+refl_after = img_after;
 
 %% --- Compute Retinex ΔE map ---
 dE_map_retinex = compute_reflectance_deltaE_direct(refl_film, refl_after, bool);
@@ -133,18 +137,37 @@ maskFile = fullfile(outputDir, sprintf('%s_retinex_mask.mat', filmName));
 save(maskFile, 'mask');
 
 %% --- Helper Functions ---
-function R = apply_multiscale_retinex(img_rgb, sigma_values)
-    img_rgb(img_rgb <= 0) = eps;
-    R = zeros(size(img_rgb));
-    for sigma = sigma_values
-        Igray = rgb2gray(img_rgb);
-        illum = imgaussfilt(Igray, sigma); illum(illum<=0)=eps;
-        for c=1:3
-            R(:,:,c) = R(:,:,c) + log(img_rgb(:,:,c)) - log(illum);
+% function R = apply_multiscale_retinex(img_rgb, sigma_values)
+%     img_rgb(img_rgb <= 0) = eps;
+%     R = zeros(size(img_rgb));
+%     for sigma = sigma_values
+%         Igray = rgb2gray(img_rgb);
+%         illum = imgaussfilt(Igray, sigma); illum(illum<=0)=eps;
+%         for c=1:3
+%             R(:,:,c) = R(:,:,c) + log(img_rgb(:,:,c)) - log(illum);
+%         end
+%     end
+%     R = real(R./numel(sigma_values));
+%     R = R - min(R(:)); R = R ./ max(R(:));
+% end
+
+function img_msr = apply_multiscale_retinex(img, scales)
+    img_msr = zeros(size(img));
+    img = max(img,1e-6); % avoid log(0)
+    weight = 1/length(scales);
+    for c = 1:3
+        channel = img(:,:,c);
+        msr_channel = zeros(size(channel));
+        for s = 1:length(scales)
+            sigma = scales(s);
+            blur = imgaussfilt(channel, sigma);
+            SSR = log(channel) - log(blur);
+            msr_channel = msr_channel + weight*SSR;
         end
+        eps_val = 1e-8;
+        msr_channel = (msr_channel - min(msr_channel(:))) / (max(msr_channel(:)) - min(msr_channel(:)) + eps_val);
+        img_msr(:,:,c) = msr_channel;
     end
-    R = real(R./numel(sigma_values));
-    R = R - min(R(:)); R = R ./ max(R(:));
 end
 
 function dE_map = compute_reflectance_deltaE_direct(r1, r2, isGamma)

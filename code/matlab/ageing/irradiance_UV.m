@@ -1,7 +1,7 @@
 % --- Parameters ---
 filename = '/Volumes/School/Thesis/Ageing/irradiance_plot.csv';   % your CSV file, with columns "x" and "y"
 ref_wavelength = 340;    % nm
-ref_irradiance  = 0.83;  % W/m^2/nm at the reference wavelength
+ref_irradiance  = 1.5;  % W/m^2/nm at the reference wavelength
 
 % --- 1) Read the data ---
 T = readtable(filename);    % requires headers "x" and "y"
