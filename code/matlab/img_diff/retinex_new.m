@@ -3,8 +3,8 @@ clear; close all;
 
 
 
-path_before = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat'; 
-path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat'; 
+% path_before = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_before_xyz.mat'; 
+% path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/cactus_reflectance_after_reg_xyz.mat'; 
 path_before = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/yoda_reflectance_before_xyz.mat'; 
 path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/yoda_reflectance_after_reg_xyz.mat';
 
@@ -13,9 +13,9 @@ path_after = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/hyspex/yoda_reflec
 % path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_halogen_kodak_exp0.mat';
 % path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_led_fuji_exp0.mat';
 % path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/cactus_led_fuji_underexp.mat';
-path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
+% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_halogen_fuji_exp0.mat';
 % path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_halogen_fuji_overexp.mat';
-% path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
+path_film = '/Volumes/Study/Thesis/data/captures/xyz_lab_rgb/film/yoda_led_kodak_exp0.mat';
 
 
 
@@ -50,10 +50,29 @@ dE_map_retinex = compute_reflectance_deltaE_direct(refl_film, refl_after, bool);
 %% --- Compute ΔE2000 before vs after ---
 Lab_before = painting_before.Lab_img;
 Lab_after  = painting_after.Lab_img;
+Lab_before = film_data.Lab_img;
 dE_map_direct = reshape(deltaE2000(reshape(Lab_before,[],3), reshape(Lab_after,[],3)), size(Lab_before,1), size(Lab_before,2));
 
 Lab_film       = film_data.Lab_img;
 dE_map_film_direct = reshape(deltaE2000(reshape(Lab_film,[],3), reshape(Lab_after,[],3)), size(Lab_after,1), size(Lab_after,2));
+%%
+figure('Name','Delta E_{00} Map','Color','w');
+imagesc(dE_map_direct);           % Display the map
+axis image off;                    % Keep pixels square, remove axis
+colormap(parula);                  % Colormap (choose 'jet', 'hot', etc. if you like)
+
+% Add colorbar with label
+c = colorbar;
+c.Label.String = '\Delta E_{00}';
+c.Label.FontSize = 20;             % Adjust font size
+c.Label.FontWeight = 'bold';
+c.FontSize = 22;     % Tick labels font size
+c.FontWeight = 'bold';
+
+% Optional: set limits for perceptually meaningful range
+caxis([0 20]);                     % Adjust depending on your expected delta E range
+title('Uncorrected film vs HSI after ageing','FontSize',24,'FontWeight','bold');
+
 
 %% --- Threshold control ---
 use_fixed_threshold = false;  % Set to true for ΔE ≥ 6 on all
