@@ -7,7 +7,7 @@ The full thesis is available through NTNU’s database: [https://nva.sikt.no/reg
 
 ## Overview
 
-Paintings change over time due to ageing, environmental exposure, and conservation history. This project explores how **analogue photographic records** of artworks (e.g., archival slide film) can be used to **reconstruct earlier appearance states** of paintings and to quantify **pigment and colour changes** between past and present. :contentReference[oaicite:1]{index=1}
+Paintings change over time due to ageing, environmental exposure, and conservation treatment. This project explores how analogue photographic records of artworks (i.e., archival slide film) can be used to provide a reference point for how a painting originally appeared and to quantify pigment and colour changes between past and present. 
 
 The methods combine:
 - **Spectral imaging** and reflectance measurements
@@ -23,6 +23,6 @@ The methods combine:
 ## Structure
 
 - `code/` – Scripts and functions for colour correction, calibration, and image processing  
-- `data/` – Example images and reference scans (archival slides and contemporary captures)  
+- `data/` – Example images and reference scans  
 - `results/` – Outputs from processing pipelines and comparison visualisations  
 
